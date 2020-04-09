@@ -1,0 +1,20 @@
+{
+  "name": "optimizationproblem",
+  "version": "1.0.0",
+  "description": "abstractions to generate optimization problems",
+  "main": "index.ts",
+  "repository": "git@github.com:kisna72/optimizationProblem.git",
+  "author": "Krishna Regmi <kisna72@gmail.com>",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "nodemon": "^2.0.3",
+    "ts-node": "^8.8.2",
+    "typescript": "^3.8.3"
+  },
+  "scripts": {
+    "start": "nodemon --exec ts-node src/index.ts"
+  },
+  "devDependencies": {
+    "ts-node-dev": "^1.0.0-pre.44"
+  }
+}
