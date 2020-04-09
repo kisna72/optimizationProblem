@@ -1,5 +1,5 @@
 interface IJob {
-    
+
 }
 
 interface IMachine {

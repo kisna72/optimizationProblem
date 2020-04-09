@@ -3,8 +3,9 @@ import JobShopProblem from "./jobShop";
 console.log("I am running")
 
 
-const j = new JobShopProblem()
-const machines = new Map()
+const job = new JobShopProblem()
+const id1:number = job.addMachine("Water Filling A", ['filling'] )
+const id2:number = job.addMachine("Packing")
+job.addJob()
 
-
-console.log(j)
+console.log(job)
