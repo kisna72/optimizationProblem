@@ -1,9 +1,6 @@
 import JobShopProblem from "./jobShop";
 import { IOperation, IComplexOperation, ComplexOperationTypeEnum, IComplexOperationUnion } from "./interface";
 
-console.log("I am running")
-
-
 const job = new JobShopProblem()
 
 // Add all machines
@@ -21,48 +18,59 @@ const l:number = job.addMachine("Labeling")
  * job is baically an array of sequence and parallels. 
  * job = sequence([operation1, operation2, parallell(operation3, operation4, sequence(operation5, operation6) ), operation7, operation8])
  */
-const expand: IOperation = {
-    machine: e,
-    time: 300
-}
-const purify: IOperation = {
-    machine:p,
-    time: 400
+const opeartionsFactory = (expandTime, purifyTime, fillTimeA, fillTimeB, capTime, labelTime ) : IComplexOperationUnion => {
+    const expand: IOperation = {
+        machine: e,
+        time: expandTime
+    }
+    const purify: IOperation = {
+        machine:p,
+        time: purifyTime
+    }
+    // Expand and Purify can happen in parallel
+    const expandAndPurify: IComplexOperation = {
+        type:ComplexOperationTypeEnum.CAN_RUN_IN_PARALLEL,
+        operations: [expand, purify]
+    }
+
+    const fill: IComplexOperation = {
+        type:ComplexOperationTypeEnum.CAN_RUN_IN_MULTIPLE_MACINES,
+        operations: [
+            {
+                machine: wa,
+                time: fillTimeA
+            },
+            {
+                machine:wb,
+                time:fillTimeB
+            }
+        ]
+    }
+    const cap: IOperation = {
+        machine: c,
+        time: capTime
+    }
+    const label: IOperation = {
+        machine: l,
+        time: labelTime
+    }
+
+    const operations: IComplexOperationUnion = [expandAndPurify, fill, cap, label]
+    return operations
 }
 
-// Expand and Purify can happen in parallel
-const expandAndPurify: IComplexOperation = {
-    type:ComplexOperationTypeEnum.CAN_RUN_IN_PARALLEL,
-    operations: [expand, purify]
-}
-
-const fill: IComplexOperation = {
-    type:ComplexOperationTypeEnum.CAN_RUN_IN_MULTIPLE_MACINES,
-    operations: [
-        {
-            machine: wa,
-            time: 600
-        },
-        {
-            machine:wb,
-            time:500
-        }
-    ]
-}
-const cap: IOperation = {
-    machine: c,
-    time: 500
-}
-const label: IOperation = {
-    machine: l,
-    time: 50
-}
-
-const operations: IComplexOperationUnion = [expandAndPurify, fill, cap, label]
+const operations_a: IComplexOperationUnion = opeartionsFactory(100, 30, 400,300,50,150)
 job.addJob({
     id:1,
     name:"32 OZ Water Bottle",
-    operations
+    operations: operations_a
+});
+ 
+const operations_b: IComplexOperationUnion = opeartionsFactory(50, 15, 200,150,50,50)
+job.addJob({
+    id:2,
+    name:"16 OZ Water Bottle",
+    operations: operations_b
 });
 
 console.log(job)
