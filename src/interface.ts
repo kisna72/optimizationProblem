@@ -4,9 +4,13 @@ interface IMachine {
     tags?: string[]
 };
 
+
 type IComplexOperationUnion = IOperation | IComplexOperation;
 type IComplexOperationUnionList = (IOperation | IComplexOperation )[];
 
+interface ITerminationCriteriaFunction{
+    ():boolean
+}
 interface IJob {
     id: number
     name: string
@@ -36,5 +40,6 @@ export {
     IComplexOperation,
     IComplexOperationUnion,
     IComplexOperationUnionList,
-    ComplexOperationTypeEnum
+    ComplexOperationTypeEnum,
+    ITerminationCriteriaFunction
 }

@@ -78,4 +78,4 @@ job.addJob({
 // console.log(job)
 console.log(util.inspect(job, {showHidden: false, depth: null}))
 
-job.solve();
+job.solve([]);

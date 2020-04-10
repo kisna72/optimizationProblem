@@ -1,5 +1,5 @@
 // This file contains classes for running job shop problems. 
-import { IComplexOperationUnion, IJob, IMachine, IOperation, ComplexOperationTypeEnum, IComplexOperation } from "./interface";
+import { IComplexOperationUnion, IJob, IMachine, IOperation, ComplexOperationTypeEnum, IComplexOperation, ITerminationCriteriaFunction } from "./interface";
 import { FisherYatesShuffle } from "./helpers";
 
 class JobShopProblem {
@@ -85,24 +85,21 @@ class JobShopProblem {
             return endTime
             // console.log("schedule after updating",   ganttChartMachineMap.get(operation.machine))
         }
-        console.log(" ")
-        console.log(" ")
-        console.log(" ")
         oned.forEach( (jobId, idx, arr) => {
             // create a schedule for this job.
-            console.log("===========START JOB =================") 
-            console.log("job id value", jobId)
+            // console.log("===========START JOB =================") 
+            // console.log("job id value", jobId)
             const job:IJob = this.jobs.get(jobId);
             //console.log(job)
             const operationIndex:number = machineIndexTrackingMap.get(jobId)
-            console.log("operation index is ", operationIndex)
+            // console.log("operation index is ", operationIndex)
             const operation = job.operations[operationIndex]
-            console.log("running operation ", operation)
+            // console.log("running operation ", operation)
             
             // adding to schedule 
             if(this.isOperationComplex(operation)){
                 const complexOperation = <IComplexOperation>operation // Cast to complex operation type
-                console.log(complexOperation.type, ComplexOperationTypeEnum.CAN_RUN_IN_MULTIPLE_MACINES)
+                // console.log(complexOperation.type, ComplexOperationTypeEnum.CAN_RUN_IN_MULTIPLE_MACINES)
                 if(complexOperation.type === ComplexOperationTypeEnum.CAN_RUN_IN_PARALLEL){
                     const endTimes = complexOperation.operations.map((operation:IOperation, idx) => {
                         const endTime = addOperationToSchedule(operation, jobId);
@@ -112,10 +109,10 @@ class JobShopProblem {
                     jobEarliestStartMap.set(jobId, maxEndTime + 1);
 
                 } else if(complexOperation.type = ComplexOperationTypeEnum.CAN_RUN_IN_MULTIPLE_MACINES){
-                    console.log("CAN RUN in MULTIPLE MACINES")
+                    // console.log("CAN RUN in MULTIPLE MACINES")
                     // in this case, we just choose one. Future Upgrade, we could just generate multiple gantt chart based on each machine ..
                     const randomlyChoosenOperationFromMultipleMachineOptions:IComplexOperationUnion = complexOperation.operations[Math.floor(Math.random()*complexOperation.operations.length)]
-                    console.log("randomly choosing a operation ", randomlyChoosenOperationFromMultipleMachineOptions)
+                    // console.log("randomly choosing a operation ", randomlyChoosenOperationFromMultipleMachineOptions)
                     const endTime = addOperationToSchedule(<IOperation>randomlyChoosenOperationFromMultipleMachineOptions, jobId); // cast before sending .
                     jobEarliestStartMap.set(jobId, endTime +1 );
                 } else {
@@ -131,17 +128,17 @@ class JobShopProblem {
             // at the end, incremebt the index of operation
             machineIndexTrackingMap.set(jobId, operationIndex+1 )
 
-            console.log(ganttChartMachineMap)
+            // console.log(ganttChartMachineMap)
 
-            console.log("++++++++++++++ END JOB +++++++++++++++++++++") 
+            // console.log("++++++++++++++ END JOB +++++++++++++++++++++") 
+
 
         })
-
-
+        return ganttChartMachineMap
     }
 
     onedArrayOfJobs(){
-        console.log("array of jobs", this.jobs)
+        // console.log("array of jobs", this.jobs)
         let arr = []
         this.jobs.forEach( (v,k) => {
             const opcount = v.operations.length
@@ -149,15 +146,48 @@ class JobShopProblem {
             arr = arr.concat(a)
         })
         arr = FisherYatesShuffle(arr)
-        console.log(arr)
+        // console.log(arr)
         return arr
     }
 
-    solve(){
+    costFunction(ganttChart:Map<number, number[]>){
+        const makeSpan = Array.from(ganttChart.values()).reduce((prev, currentListOfSchedules) => {
+            const lastTime:number = currentListOfSchedules[currentListOfSchedules.length -1]
+            if(lastTime >  prev){
+                return lastTime
+            }
+            return prev
+        }, 0)
+        return makeSpan
+    }
+
+    solve(terminationCriteria:ITerminationCriteriaFunction[]){
         console.log("solving")
-        // step 1: Look at jobs and machines, and generate a 1D array of jobs
-        const oned = this.onedArrayOfJobs()
-        this.oneDToGanttChart(oned)
+        const maxSimulations = 100
+        let currentSimCount = 0
+        let terminateNow
+        let bestGanttChart;
+        let bestMakeSpan = +Infinity
+        while(!terminateNow) {
+            const terminatedList:boolean[] = terminationCriteria.map(f => f())
+            terminateNow = terminatedList.reduce((prev, curr) => {curr ? true: prev}, false)
+            const oned = this.onedArrayOfJobs()
+            const ganttChart:Map<number, number[]> =  this.oneDToGanttChart(oned)
+            const makespan = this.costFunction(ganttChart);
+            //console.log("makespan is ", makespan)
+            if(makespan < bestMakeSpan){
+                bestMakeSpan = makespan
+                bestGanttChart = ganttChart
+            }
+            if(currentSimCount > maxSimulations){
+                terminateNow = true
+            }
+            currentSimCount += 1
+        }
+
+        console.log("Terninating criteria passed")
+        console.log("shortest makespan is ", bestMakeSpan)
+        console.log(bestGanttChart)
     }
 }
 
