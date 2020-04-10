@@ -1,5 +1,5 @@
 import JobShopProblem from "./jobShop";
-import { IJobArgument, IOperation, ICanRunInParallel, ICanRunInMultipleMachines, IComplexOperation } from "./interface";
+import { IOperation, IComplexOperation, ComplexOperationTypeEnum, IComplexOperationUnion } from "./interface";
 
 console.log("I am running")
 
@@ -29,12 +29,15 @@ const purify: IOperation = {
     machine:p,
     time: 400
 }
+
 // Expand and Purify can happen in parallel
-const expandAndPurify: ICanRunInParallel = {
+const expandAndPurify: IComplexOperation = {
+    type:ComplexOperationTypeEnum.CAN_RUN_IN_PARALLEL,
     operations: [expand, purify]
 }
 
-const fill: ICanRunInMultipleMachines = {
+const fill: IComplexOperation = {
+    type:ComplexOperationTypeEnum.CAN_RUN_IN_MULTIPLE_MACINES,
     operations: [
         {
             machine: wa,
@@ -55,6 +58,11 @@ const label: IOperation = {
     time: 50
 }
 
-const operations: IComplexOperation = [expandAndPurify, fill, cap, label]
+const operations: IComplexOperationUnion = [expandAndPurify, fill, cap, label]
+job.addJob({
+    id:1,
+    name:"32 OZ Water Bottle",
+    operations
+});
 
 console.log(job)

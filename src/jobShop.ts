@@ -1,5 +1,5 @@
 // This file contains classes for running job shop problems. 
-import { IJob, IMachine, IOperation } from "./interface";
+import { IJob, IMachine, IOperation,  } from "./interface";
 
 class JobShopProblem {
     machines: Map<number,IMachine>; 
@@ -12,7 +12,7 @@ class JobShopProblem {
         this.jobs.set(job.id, job)
     }
     addOperation(jobKey: number){
-            
+
     }
     /**
      * Returns ID of the newly added Machine
