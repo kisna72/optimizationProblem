@@ -4,12 +4,13 @@ interface IMachine {
     tags?: string[]
 };
 
-type IComplexOperationUnion = (IOperation | IComplexOperation )[];
+type IComplexOperationUnion = IOperation | IComplexOperation;
+type IComplexOperationUnionList = (IOperation | IComplexOperation )[];
 
 interface IJob {
     id: number
     name: string
-    operations: IComplexOperationUnion
+    operations: IComplexOperationUnionList
 };
 
 interface IOperation {
@@ -19,12 +20,13 @@ interface IOperation {
 };
 
 enum ComplexOperationTypeEnum {
+    SIMPLE,
     CAN_RUN_IN_PARALLEL,
     CAN_RUN_IN_MULTIPLE_MACINES
 }
 interface IComplexOperation {
     type: ComplexOperationTypeEnum
-    operations: IComplexOperationUnion // hence allowing us to infintely nest
+    operations: IComplexOperationUnionList // hence allowing us to infintely nest
 }
 
 export {
@@ -33,5 +35,6 @@ export {
     IMachine,
     IComplexOperation,
     IComplexOperationUnion,
+    IComplexOperationUnionList,
     ComplexOperationTypeEnum
 }

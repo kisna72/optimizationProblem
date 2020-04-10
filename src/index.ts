@@ -1,5 +1,6 @@
 import JobShopProblem from "./jobShop";
-import { IOperation, IComplexOperation, ComplexOperationTypeEnum, IComplexOperationUnion } from "./interface";
+import { IOperation, IComplexOperation, ComplexOperationTypeEnum, IComplexOperationUnionList } from "./interface";
+const util = require('util');
 
 const job = new JobShopProblem()
 
@@ -18,7 +19,7 @@ const l:number = job.addMachine("Labeling")
  * job is baically an array of sequence and parallels. 
  * job = sequence([operation1, operation2, parallell(operation3, operation4, sequence(operation5, operation6) ), operation7, operation8])
  */
-const opeartionsFactory = (expandTime, purifyTime, fillTimeA, fillTimeB, capTime, labelTime ) : IComplexOperationUnion => {
+const operationsFactory = (expandTime, purifyTime, fillTimeA, fillTimeB, capTime, labelTime ) : IComplexOperationUnionList => {
     const expand: IOperation = {
         machine: e,
         time: expandTime
@@ -55,22 +56,26 @@ const opeartionsFactory = (expandTime, purifyTime, fillTimeA, fillTimeB, capTime
         time: labelTime
     }
 
-    const operations: IComplexOperationUnion = [expandAndPurify, fill, cap, label]
+    const operations: IComplexOperationUnionList = [expandAndPurify, fill, cap, label]
     return operations
 }
 
-const operations_a: IComplexOperationUnion = opeartionsFactory(100, 30, 400,300,50,150)
+const operations_a: IComplexOperationUnionList = operationsFactory(100, 30, 400,300,50,150)
 job.addJob({
-    id:1,
+    id:5,
     name:"32 OZ Water Bottle",
     operations: operations_a
 });
  
-const operations_b: IComplexOperationUnion = opeartionsFactory(50, 15, 200,150,50,50)
+const operations_b: IComplexOperationUnionList = operationsFactory(50, 15, 200,150,50,50)
 job.addJob({
-    id:2,
+    id:20,
     name:"16 OZ Water Bottle",
     operations: operations_b
 });
 
-console.log(job)
+
+// console.log(job)
+console.log(util.inspect(job, {showHidden: false, depth: null}))
+
+job.solve();
