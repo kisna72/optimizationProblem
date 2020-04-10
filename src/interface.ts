@@ -1,42 +1,46 @@
-interface IOperation {
-    machine: number
-    time: number // time in seconds
-    displayTimeUnit: string // Unit to display for time. 
-}
+interface IMachine {
+    id: number // this is the key from machineMap
+    name?: string 
+    tags?: string[]
+};
+
+type IComplexOperation = (IOperation | ICanRunInParallel | ICanRunInMultipleMachines)[];
 
 interface IJob {
     id: number
     name: string
-    operations: (IOperation | ISequence)[]
-}
+    operations: IComplexOperation
+};
 
-interface ISequence {
-    operations: (IOperation | ISequence)[]
-}
+interface IOperation {
+    machine: number // This is machine id from Machine Map
+    time: number // time in seconds
+    displayTimeUnit?: string // Unit to display for time. Not needed for seconds
+};
 
-interface IMachine {
-    id: number
-    name?: string 
-    tags?: string[]
-}
+// Jobs that CAN run in parallel
+interface ICanRunInParallel {
+    operations: IComplexOperation
+};
 
-interface IMachineMap {
-    map: Map<string, IMachine>
-}
+// Just one need to run
+interface ICanRunInMultipleMachines {
+    operations: IComplexOperation
+};
 
 // One or the other
 interface IJobArgument {
     SEQUENCE?: IOperation[]
     PARALLEL?: IOperation[]
-}
+};
 
 export {
     IOperation,
     IJob,
-    ISequence,
+    ICanRunInParallel,
+    ICanRunInMultipleMachines,
     IMachine,
-    IMachineMap,
-    IJobArgument,
+    IComplexOperation,
 }
 
 
