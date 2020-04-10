@@ -1,12 +1,11 @@
 // This file contains classes for running job shop problems. 
-import { IJob, IMachine,  } from "./interface";
+import { IJob, IMachine } from "./interface";
 
 class JobShopProblem {
     machines: Map<number,IMachine>; 
     job: IJob
     constructor(){
         this.machines = new Map()
-        this.job = new Map()
     }
     addJob(){}
     addMachine(name:string, tags?:string[]){
