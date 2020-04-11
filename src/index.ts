@@ -106,64 +106,20 @@ const operationsRandomFactory = (numberOfJobs) => {
     }
 }
 
+// randomly increase complexity of the problem for experiments ...
 operationsRandomFactory(100)
 
 // console.log(job)
 console.log(util.inspect(job, {showHidden: false, depth: null}))
 
 const solParams:ISolutionParamters = {
-    maxNumberOfSimulations:1000,
+    maxNumberOfSimulations:100000,
     maxSecondsToRun: 500,
     algorithm: JobShopAlgorithmEnum.HILL_CLIMBING_WITH_RESTARTS,
-    hillClimbingRandomRestartPercent: 0.0001 // restart 0.001 percent of the time. Gives the algorithm enough time to discover a local minima
+    hillClimbingRandomRestartPercent: .0001 // restart 0.0001 percent of the time. Gives the algorithm enough time to discover a local minima.
+    // Smaller than number better chance the algorithm has to discover local minima... important during large 
 }
 
 job.setSolutionParameters(solParams)
-const solution = job.solve();
-
+const bestGanttChart = job.solve();
 console.log("done")
-// // Experiment on which algorithm is better. 
-// const rand = []
-// const randMakeSpan = []
-// const hill = []
-// const hillMakeSpan = []
-// const hillres = []
-// const hillResMakeSpan = []
-// for(let i = 0 ; i < 10; i++){
-//     console.log("running index ", i)
-//     const solParams:ISolutionParamters = {
-//         maxNumberOfSimulations:10000,
-//         maxSecondsToRun: 500,
-//         algorithm: JobShopAlgorithmEnum.RANDOM,
-//         //hillClimbingRandomRestartPercent: 0.0001 // restart 0.001 percent of the time. Gives the algorithm enough time to discover a local minima
-//     }
-
-//     job.setSolutionParameters(solParams)
-//     const { bestMakeSpanIndex, bestMakeSpan } = job.solve()
-//     rand.push(bestMakeSpanIndex)
-//     randMakeSpan.push(bestMakeSpan)
-    
-//     solParams.algorithm = JobShopAlgorithmEnum.HILL_CLIMBING
-//     job.setSolutionParameters(solParams)
-//     const solHill = job.solve()
-//     hill.push(solHill.bestMakeSpanIndex)
-//     hillMakeSpan.push(solHill.bestMakeSpan)
-
-//     solParams.algorithm = JobShopAlgorithmEnum.HILL_CLIMBING_WITH_RESTARTS
-//     solParams.hillClimbingRandomRestartPercent = 0.0001
-//     job.setSolutionParameters(solParams)
-//     const solHillRes = job.solve()
-//     hillres.push(solHillRes.bestMakeSpanIndex)
-//     hillResMakeSpan.push(solHillRes.bestMakeSpan)
-// }
-// function getAvg(grades) {
-//     const total = grades.reduce((acc, c) => acc + c, 0);
-//     return total / grades.length;
-// }
-  
-// console.log("rand", getAvg(rand))
-// console.log("rand", getAvg(randMakeSpan))
-// console.log("hill", getAvg(hill))
-// console.log("hill", getAvg(hillMakeSpan))
-// console.log("hillres", getAvg(hillres))
-// console.log("hillres", getAvg(hillResMakeSpan))

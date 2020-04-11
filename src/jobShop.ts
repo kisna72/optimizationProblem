@@ -21,11 +21,14 @@ class JobShopProblem {
     algorithm: JobShopAlgorithmEnum
     hillClimbingRandomRestartPercent: number
     terminationCriteriaFuncs:ITerminationCriteriaFunction[];
+
+    // Output properties....
     best1Dsolution: number[] // Need to keep track of this for hill climbinh algorithm.
+    totalRestarts: number // how many times did we restart?
+
+    // Output properties => Only for hill climbing with restarts ...
     best1DSolutionLocal: number[] //Local Minima used for random restarts with hill Climbing with restart algorithm
     bestMakeSpanLocal: number; 
-
-    totalRestarts: number // how many times did we restart?
 
     defaultCostFunction: (a:number) => {}
 
@@ -225,7 +228,7 @@ class JobShopProblem {
         } else if (this.algorithm === JobShopAlgorithmEnum.HILL_CLIMBING){
             return swap(this.best1Dsolution)
         } else if (this.algorithm === JobShopAlgorithmEnum.HILL_CLIMBING_WITH_RESTARTS){
-            const randomPercent = Math.floor(Math.random() * 100) //uniformly spread out percent
+            const randomPercent = Math.random() * 100
             // eg: percent = 20.There is a 20% chance that randomPercent is 20 or less. 
             // so if randomPercent is 20 or less, we add randomness, else we keep hill climbing. 
             const useRandom = randomPercent < this.hillClimbingRandomRestartPercent ? true : false
@@ -281,7 +284,6 @@ class JobShopProblem {
         return funcs
     }
 
-
     solve(){
         console.log("solving")
         
@@ -290,7 +292,6 @@ class JobShopProblem {
         let bestGanttChart;
         let bestMakeSpan = +Infinity
         let bestMakeSpanIndex = 0
-        let bestMakeSpanLocal = +Infinity
 
         const defaultTerminationArgs:ITerminationCriteriaFunctionArguments = {
             currentSimulationIndex: currentSimCount,
