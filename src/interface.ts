@@ -8,9 +8,24 @@ interface IMachine {
 type IComplexOperationUnion = IOperation | IComplexOperation;
 type IComplexOperationUnionList = (IOperation | IComplexOperation )[];
 
-interface ITerminationCriteriaFunction{
-    ():boolean
+// Why send all these to every termination argument? because it allows us to 
+// create a generic terminal function that can be run reliably. 
+interface ITerminationCriteriaFunctionArguments {
+    currentSimulationIndex:number
+    simulationStartTime:Date
+    maxNumberOfSimulations: number
+    maxSecondsToRun: number
+    algorithm: JobShopAlgorithmEnum
 }
+
+interface ITerminationCriteriaFunction {
+    (args: ITerminationCriteriaFunctionArguments):boolean
+}
+
+interface ICostFunction {
+    ():number
+}
+
 interface IJob {
     id: number
     name: string
@@ -33,6 +48,19 @@ interface IComplexOperation {
     operations: IComplexOperationUnionList // hence allowing us to infintely nest
 }
 
+enum JobShopAlgorithmEnum {
+    RANDOM, //
+    HILL_CLIMBING,
+    // GENETIC_ALGORITHM
+}
+
+interface ISolutionParamters {
+    maxNumberOfSimulations?: number
+    maxSecondsToRun?: number
+    algorithm?: JobShopAlgorithmEnum
+}
+
+
 export {
     IOperation,
     IJob,
@@ -41,5 +69,9 @@ export {
     IComplexOperationUnion,
     IComplexOperationUnionList,
     ComplexOperationTypeEnum,
-    ITerminationCriteriaFunction
+    ITerminationCriteriaFunction,
+    ITerminationCriteriaFunctionArguments,
+    JobShopAlgorithmEnum,
+    ISolutionParamters,
+    ICostFunction
 }

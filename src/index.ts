@@ -1,5 +1,5 @@
 import JobShopProblem from "./jobShop";
-import { IOperation, IComplexOperation, ComplexOperationTypeEnum, IComplexOperationUnionList } from "./interface";
+import { IOperation, IComplexOperation, ComplexOperationTypeEnum, IComplexOperationUnionList, ISolutionParamters } from "./interface";
 const util = require('util');
 
 const job = new JobShopProblem()
@@ -74,8 +74,33 @@ job.addJob({
     operations: operations_b
 });
 
+const operations_c: IComplexOperationUnionList = operationsFactory(40, 24, 40, 500, 20, 40)
+job.addJob({
+    id:30,
+    name:"16 OZ Water Bottle",
+    operations: operations_c
+});
+const operations_d: IComplexOperationUnionList = operationsFactory(405, 240, 40, 500, 40, 80)
+job.addJob({
+    id:40,
+    name:"16 OZ Coca Cola",
+    operations: operations_d
+});
+
+const operations_e: IComplexOperationUnionList = operationsFactory(405, 240, 40, 500, 40, 80)
+job.addJob({
+    id:50,
+    name:"16 OZ Coca Cola",
+    operations: operations_e
+});
 
 // console.log(job)
 console.log(util.inspect(job, {showHidden: false, depth: null}))
 
-job.solve([]);
+const solParams:ISolutionParamters = {
+    maxNumberOfSimulations:6000000,
+    maxSecondsToRun: 5
+}
+job.setSolutionParameters(solParams)
+
+job.solve();

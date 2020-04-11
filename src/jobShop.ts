@@ -1,13 +1,35 @@
 // This file contains classes for running job shop problems. 
-import { IComplexOperationUnion, IJob, IMachine, IOperation, ComplexOperationTypeEnum, IComplexOperation, ITerminationCriteriaFunction } from "./interface";
+import { 
+    IComplexOperationUnion, 
+    IJob, 
+    IMachine, 
+    IOperation, 
+    ComplexOperationTypeEnum, 
+    IComplexOperation, 
+    ITerminationCriteriaFunctionArguments,
+    ITerminationCriteriaFunction, 
+    JobShopAlgorithmEnum, 
+    ISolutionParamters,
+} from "./interface";
 import { FisherYatesShuffle } from "./helpers";
 
 class JobShopProblem {
+    
     machines: Map<number,IMachine>; 
     jobs: Map<number, IJob>
+    maxNumberOfSimulations: number | null
+    maxSecondsToRun: number // Can never be null 
+    algorithm: JobShopAlgorithmEnum
+    terminationCriteriaFuncs:ITerminationCriteriaFunction[]; 
+    defaultCostFunction: (a:number) => {}
+
     constructor(){
         this.machines = new Map()
         this.jobs = new Map()
+        this.maxNumberOfSimulations = 100000 // default unless set otherwise
+        this.maxSecondsToRun = 30 // default unless set otherwise.
+        this.algorithm = JobShopAlgorithmEnum.RANDOM
+        this.terminationCriteriaFuncs = this.generateDefaultTerminationCriteriaFunctions();
     }
     addJob(job:IJob){
         this.jobs.set(job.id, job)
@@ -30,6 +52,26 @@ class JobShopProblem {
         this.machines.set(id, machine)
         return id
     }
+    setSolutionParameters(params:ISolutionParamters):void {
+        if(params.maxNumberOfSimulations) {
+            this.maxNumberOfSimulations = params.maxNumberOfSimulations
+        }
+        if(params.maxSecondsToRun) {
+            this.maxSecondsToRun =  params.maxSecondsToRun
+        }
+        if(params.algorithm){
+            this.algorithm = params.algorithm
+        }
+    }
+    addTerminationCriteria(terminationFunction:ITerminationCriteriaFunction){
+        // add a new termination criteria
+        this.terminationCriteriaFuncs.push(terminationFunction)
+        return this.terminationCriteriaFuncs
+    }
+
+    /**
+     * SOLVER FUNCTIONS 
+     */
     isOperationComplex(operation: IComplexOperationUnion){
         return operation.hasOwnProperty("type") && operation.hasOwnProperty("operations")
     }
@@ -161,16 +203,58 @@ class JobShopProblem {
         return makeSpan
     }
 
-    solve(terminationCriteria:ITerminationCriteriaFunction[]){
-        console.log("solving")
-        const maxSimulations = 100
+    generateDefaultTerminationCriteriaFunctions(): ITerminationCriteriaFunction[] {
+        const funcs:ITerminationCriteriaFunction[] = []
+        if(this.maxNumberOfSimulations){
+            const terminateBasedOnNumberOfSimulations:ITerminationCriteriaFunction = function(args:ITerminationCriteriaFunctionArguments ){
+                if(args.currentSimulationIndex > args.maxNumberOfSimulations){
+                    return true
+                }
+                return false //otherwise return false
+            }
+            funcs.push(terminateBasedOnNumberOfSimulations)
+        }
+
+        if(this.maxSecondsToRun){
+            const terminateBasedOnMaxSecondsSinceStart:ITerminationCriteriaFunction = function(args:ITerminationCriteriaFunctionArguments){
+                const terminationTime:Date = new Date(args.simulationStartTime.getTime())
+                terminationTime.setSeconds( terminationTime.getSeconds() + args.maxSecondsToRun)
+                if(new Date() > terminationTime ){
+                    return true
+                }
+                return false
+            } 
+            funcs.push(terminateBasedOnMaxSecondsSinceStart)
+        }
+        return funcs
+    }
+
+
+    solve(){
         let currentSimCount = 0
+
+        const defaultTerminationArgs:ITerminationCriteriaFunctionArguments = {
+            currentSimulationIndex: currentSimCount,
+            simulationStartTime: new Date(),
+            maxNumberOfSimulations: this.maxNumberOfSimulations,
+            maxSecondsToRun:this.maxSecondsToRun,
+            algorithm: this.algorithm,
+        }
+
+        console.log("solving")
         let terminateNow
         let bestGanttChart;
         let bestMakeSpan = +Infinity
         while(!terminateNow) {
-            const terminatedList:boolean[] = terminationCriteria.map(f => f())
-            terminateNow = terminatedList.reduce((prev, curr) => {curr ? true: prev}, false)
+            // Update current Sim Count to run on termination criteria functions.
+            defaultTerminationArgs.currentSimulationIndex = currentSimCount
+
+            const terminatedList:boolean[] = this.terminationCriteriaFuncs.map(f => f(defaultTerminationArgs))
+            terminateNow = terminatedList.reduce((prev, curr) => curr ? true: prev, false)
+            // print to screen every so often
+            if(currentSimCount % 10){
+                process.stdout.write(`Running simulation ${currentSimCount} of ${this.maxNumberOfSimulations}\r`)
+            }
             const oned = this.onedArrayOfJobs()
             const ganttChart:Map<number, number[]> =  this.oneDToGanttChart(oned)
             const makespan = this.costFunction(ganttChart);
@@ -179,13 +263,10 @@ class JobShopProblem {
                 bestMakeSpan = makespan
                 bestGanttChart = ganttChart
             }
-            if(currentSimCount > maxSimulations){
-                terminateNow = true
-            }
             currentSimCount += 1
         }
 
-        console.log("Terninating criteria passed")
+        console.log("Termination criteria passed")
         console.log("shortest makespan is ", bestMakeSpan)
         console.log(bestGanttChart)
     }
