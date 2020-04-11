@@ -20,8 +20,14 @@ class JobShopProblem {
     maxNumberOfSimulations: number | null
     maxSecondsToRun: number // Can never be null 
     algorithm: JobShopAlgorithmEnum
+    hillClimbingRandomRestartPercent: number
     terminationCriteriaFuncs:ITerminationCriteriaFunction[];
     best1Dsolution: number[] // Need to keep track of this for hill climbinh algorithm.
+    best1DSolutionLocal: number[] //Local Minima used for random restarts with hill Climbing with restart algorithm
+    bestMakeSpanLocal: number; 
+
+    totalRestarts: number // how many times did we restart?
+
     defaultCostFunction: (a:number) => {}
 
     constructor(){
@@ -30,7 +36,10 @@ class JobShopProblem {
         this.maxNumberOfSimulations = 100000 // default unless set otherwise
         this.maxSecondsToRun = 30 // default unless set otherwise.
         this.algorithm = JobShopAlgorithmEnum.RANDOM
+        this.hillClimbingRandomRestartPercent = 1 // default use random in 1 percents of the calls. 
+        this.totalRestarts = 0
         this.terminationCriteriaFuncs = this.generateDefaultTerminationCriteriaFunctions();
+        this.bestMakeSpanLocal = Infinity
     }
     addJob(job:IJob){
         this.jobs.set(job.id, job)
@@ -62,6 +71,9 @@ class JobShopProblem {
         }
         if(params.algorithm){
             this.algorithm = params.algorithm
+        }
+        if(params.hillClimbingRandomRestartPercent){
+            this.hillClimbingRandomRestartPercent = params.hillClimbingRandomRestartPercent
         }
     }
     addTerminationCriteria(terminationFunction:ITerminationCriteriaFunction){
@@ -184,20 +196,30 @@ class JobShopProblem {
             base[randj] = randiVal
             return base
         }
-        const addRandomnessToSwap = (base, percent) => {
-            const randomPercent = Math.floor(Math.random() * 100) //uniformly spread out percent
-            // eg: percent = 20.There is a 20% chance that randomPercent is 20 or less. 
-            // so if randomPercent is 20 or less, we add randomness, else we keep hill climbing. 
-            const useRandom = randomPercent < percent ? true : false
+
+        if(!this.best1Dsolution){
+            return getRandomArrayOfJobs()
         }
 
         if(this.algorithm === JobShopAlgorithmEnum.RANDOM){
             return getRandomArrayOfJobs()
         } else if (this.algorithm === JobShopAlgorithmEnum.HILL_CLIMBING){
-            if(!this.best1Dsolution){
-                return getRandomArrayOfJobs()
-            }
             return swap(this.best1Dsolution)
+        } else if (this.algorithm === JobShopAlgorithmEnum.HILL_CLIMBING_WITH_RESTARTS){
+            const randomPercent = Math.floor(Math.random() * 100) //uniformly spread out percent
+            // eg: percent = 20.There is a 20% chance that randomPercent is 20 or less. 
+            // so if randomPercent is 20 or less, we add randomness, else we keep hill climbing. 
+            const useRandom = randomPercent < this.hillClimbingRandomRestartPercent ? true : false
+            if(useRandom){
+                this.totalRestarts += 1
+                //makeSpansForCsv.push(90000)
+                const oned = getRandomArrayOfJobs()
+                this.best1DSolutionLocal = oned //rest best1DSolutionLocal
+                this.bestMakeSpanLocal = Infinity
+                return oned
+            } else {
+                return swap(this.best1DSolutionLocal)
+            }
         } else {
             throw new Error("Not implemented")
         }
@@ -243,12 +265,13 @@ class JobShopProblem {
 
     solve(){
         console.log("solving")
-
+        
         let currentSimCount = 0
         let terminateNow
         let bestGanttChart;
         let bestMakeSpan = +Infinity
         let bestMakeSpanIndex = 0
+        let bestMakeSpanLocal = +Infinity
 
         const defaultTerminationArgs:ITerminationCriteriaFunctionArguments = {
             currentSimulationIndex: currentSimCount,
@@ -266,26 +289,39 @@ class JobShopProblem {
             terminateNow = terminatedList.reduce((prev, curr) => curr ? true: prev, false)
             // print to screen every so often
             if(currentSimCount % 10){
-                process.stdout.write(`Running simulation ${currentSimCount} of ${this.maxNumberOfSimulations}. Best MakeSpan so far ${bestMakeSpan} on simulation number ${bestMakeSpanIndex} \r`)
+                process.stdout.write(`Running simulation ${currentSimCount} of ${this.maxNumberOfSimulations}. RS ${this.totalRestarts} Best MakeSpan so far ${bestMakeSpan} on simulation number ${bestMakeSpanIndex} \r`)
             }
             const oned = this.onedArrayOfJobs()
             const ganttChart:Map<number, number[]> =  this.oneDToGanttChart(oned)
             const makespan = this.costFunction(ganttChart);
             //console.log("makespan is ", makespan)
             if(makespan < bestMakeSpan){
+                // output global makespan value here.
                 bestMakeSpan = makespan
                 bestGanttChart = ganttChart
                 this.best1Dsolution = oned
                 bestMakeSpanIndex = currentSimCount
+            }
+
+            if(this.algorithm === JobShopAlgorithmEnum.HILL_CLIMBING_WITH_RESTARTS){
+                if(makespan < this.bestMakeSpanLocal){
+                    // send makespan value here for hill climbing with restarts...
+                    this.bestMakeSpanLocal = makespan
+                    this.best1DSolutionLocal = oned
+                }
             }
             currentSimCount += 1
         }
 
         console.log("Termination criteria passed")
         console.log("shortest makespan is ", bestMakeSpan)
-        console.log(bestGanttChart)
+        // console.log(bestGanttChart)
+        return {
+            bestGanttChart,
+            bestMakeSpan,
+            bestMakeSpanIndex
+        }
     }
 }
-
 
 export default JobShopProblem

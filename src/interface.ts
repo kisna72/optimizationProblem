@@ -51,6 +51,7 @@ interface IComplexOperation {
 enum JobShopAlgorithmEnum {
     RANDOM, //
     HILL_CLIMBING,
+    HILL_CLIMBING_WITH_RESTARTS,
     // GENETIC_ALGORITHM
 }
 
@@ -58,8 +59,8 @@ interface ISolutionParamters {
     maxNumberOfSimulations?: number
     maxSecondsToRun?: number
     algorithm?: JobShopAlgorithmEnum
+    hillClimbingRandomRestartPercent?: number
 }
-
 
 export {
     IOperation,
