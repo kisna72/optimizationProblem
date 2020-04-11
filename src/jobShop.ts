@@ -11,7 +11,6 @@ import {
     JobShopAlgorithmEnum, 
     ISolutionParamters,
 } from "./interface";
-import { FisherYatesShuffle } from "./helpers";
 
 class JobShopProblem {
     
@@ -88,6 +87,26 @@ class JobShopProblem {
     isOperationComplex(operation: IComplexOperationUnion){
         return operation.hasOwnProperty("type") && operation.hasOwnProperty("operations")
     }
+
+    FisherYatesShuffle(array) {
+        let currentIndex = array.length, temporaryValue, randomIndex;
+      
+        // While there remain elements to shuffle...
+        while (0 !== currentIndex) {
+      
+          // Pick a remaining element...
+          randomIndex = Math.floor(Math.random() * currentIndex);
+          currentIndex -= 1;
+      
+          // And swap it with the current element.
+          temporaryValue = array[currentIndex];
+          array[currentIndex] = array[randomIndex];
+          array[randomIndex] = temporaryValue;
+        }
+      
+        return array;
+    }
+    
 
     // UNUSED ... TODO > recursively count operations until everthing is counted correctly .... 
     countOperations(job:IJob) :number {
@@ -182,7 +201,7 @@ class JobShopProblem {
                 const a = new Array(opcount).fill(k)
                 arr = arr.concat(a)
             })
-            arr = FisherYatesShuffle(arr)
+            arr = this.FisherYatesShuffle(arr)
             return arr
         }
         const swap = (base) => {
