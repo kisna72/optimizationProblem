@@ -20,7 +20,8 @@ class JobShopProblem {
     maxNumberOfSimulations: number | null
     maxSecondsToRun: number // Can never be null 
     algorithm: JobShopAlgorithmEnum
-    terminationCriteriaFuncs:ITerminationCriteriaFunction[]; 
+    terminationCriteriaFuncs:ITerminationCriteriaFunction[];
+    best1Dsolution: number[] // Need to keep track of this for hill climbinh algorithm.
     defaultCostFunction: (a:number) => {}
 
     constructor(){
@@ -76,7 +77,7 @@ class JobShopProblem {
         return operation.hasOwnProperty("type") && operation.hasOwnProperty("operations")
     }
 
-    // TODO > Keep digging in the job until all operations are counted....
+    // UNUSED ... TODO > recursively count operations until everthing is counted correctly .... 
     countOperations(job:IJob) :number {
         let count = 0
         job.operations.forEach((op:IComplexOperationUnion) => {
@@ -117,7 +118,6 @@ class JobShopProblem {
             const earliestJobStartTime = jobEarliestStartMap.get(jobId);
             const startTime = Math.max(earliestMachineAvailableTime, earliestJobStartTime)
             const endTime = startTime + operation.time
-            // console.log("schedule before updating ", scheduleSoFar)
             if(scheduleSoFar.length === 0){
                 ganttChartMachineMap.set(operation.machine, [jobId, startTime , endTime])
             } else {
@@ -125,23 +125,15 @@ class JobShopProblem {
             }
 
             return endTime
-            // console.log("schedule after updating",   ganttChartMachineMap.get(operation.machine))
         }
         oned.forEach( (jobId, idx, arr) => {
-            // create a schedule for this job.
-            // console.log("===========START JOB =================") 
-            // console.log("job id value", jobId)
             const job:IJob = this.jobs.get(jobId);
-            //console.log(job)
             const operationIndex:number = machineIndexTrackingMap.get(jobId)
-            // console.log("operation index is ", operationIndex)
             const operation = job.operations[operationIndex]
-            // console.log("running operation ", operation)
             
             // adding to schedule 
             if(this.isOperationComplex(operation)){
                 const complexOperation = <IComplexOperation>operation // Cast to complex operation type
-                // console.log(complexOperation.type, ComplexOperationTypeEnum.CAN_RUN_IN_MULTIPLE_MACINES)
                 if(complexOperation.type === ComplexOperationTypeEnum.CAN_RUN_IN_PARALLEL){
                     const endTimes = complexOperation.operations.map((operation:IOperation, idx) => {
                         const endTime = addOperationToSchedule(operation, jobId);
@@ -151,10 +143,7 @@ class JobShopProblem {
                     jobEarliestStartMap.set(jobId, maxEndTime + 1);
 
                 } else if(complexOperation.type = ComplexOperationTypeEnum.CAN_RUN_IN_MULTIPLE_MACINES){
-                    // console.log("CAN RUN in MULTIPLE MACINES")
-                    // in this case, we just choose one. Future Upgrade, we could just generate multiple gantt chart based on each machine ..
                     const randomlyChoosenOperationFromMultipleMachineOptions:IComplexOperationUnion = complexOperation.operations[Math.floor(Math.random()*complexOperation.operations.length)]
-                    // console.log("randomly choosing a operation ", randomlyChoosenOperationFromMultipleMachineOptions)
                     const endTime = addOperationToSchedule(<IOperation>randomlyChoosenOperationFromMultipleMachineOptions, jobId); // cast before sending .
                     jobEarliestStartMap.set(jobId, endTime +1 );
                 } else {
@@ -169,27 +158,49 @@ class JobShopProblem {
 
             // at the end, incremebt the index of operation
             machineIndexTrackingMap.set(jobId, operationIndex+1 )
-
-            // console.log(ganttChartMachineMap)
-
-            // console.log("++++++++++++++ END JOB +++++++++++++++++++++") 
-
-
         })
         return ganttChartMachineMap
     }
 
     onedArrayOfJobs(){
-        // console.log("array of jobs", this.jobs)
-        let arr = []
-        this.jobs.forEach( (v,k) => {
-            const opcount = v.operations.length
-            const a = new Array(opcount).fill(k)
-            arr = arr.concat(a)
-        })
-        arr = FisherYatesShuffle(arr)
-        // console.log(arr)
-        return arr
+        const getRandomArrayOfJobs = () => {
+            let arr = []
+            this.jobs.forEach( (v,k) => {
+                const opcount = v.operations.length
+                const a = new Array(opcount).fill(k)
+                arr = arr.concat(a)
+            })
+            arr = FisherYatesShuffle(arr)
+            return arr
+        }
+        const swap = (base) => {
+            const randi = Math.floor(Math.random() * base.length )
+            let randj = Math.floor(Math.random() * base.length )
+            while(base[randi] === base[randj]){ // no point in swapping the same number.
+                randj = Math.floor(Math.random() * base.length )
+            }
+            const randiVal = base[randi]
+            base[randi] = base[randj]
+            base[randj] = randiVal
+            return base
+        }
+        const addRandomnessToSwap = (base, percent) => {
+            const randomPercent = Math.floor(Math.random() * 100) //uniformly spread out percent
+            // eg: percent = 20.There is a 20% chance that randomPercent is 20 or less. 
+            // so if randomPercent is 20 or less, we add randomness, else we keep hill climbing. 
+            const useRandom = randomPercent < percent ? true : false
+        }
+
+        if(this.algorithm === JobShopAlgorithmEnum.RANDOM){
+            return getRandomArrayOfJobs()
+        } else if (this.algorithm === JobShopAlgorithmEnum.HILL_CLIMBING){
+            if(!this.best1Dsolution){
+                return getRandomArrayOfJobs()
+            }
+            return swap(this.best1Dsolution)
+        } else {
+            throw new Error("Not implemented")
+        }
     }
 
     costFunction(ganttChart:Map<number, number[]>){
@@ -231,7 +242,13 @@ class JobShopProblem {
 
 
     solve(){
+        console.log("solving")
+
         let currentSimCount = 0
+        let terminateNow
+        let bestGanttChart;
+        let bestMakeSpan = +Infinity
+        let bestMakeSpanIndex = 0
 
         const defaultTerminationArgs:ITerminationCriteriaFunctionArguments = {
             currentSimulationIndex: currentSimCount,
@@ -241,10 +258,6 @@ class JobShopProblem {
             algorithm: this.algorithm,
         }
 
-        console.log("solving")
-        let terminateNow
-        let bestGanttChart;
-        let bestMakeSpan = +Infinity
         while(!terminateNow) {
             // Update current Sim Count to run on termination criteria functions.
             defaultTerminationArgs.currentSimulationIndex = currentSimCount
@@ -253,7 +266,7 @@ class JobShopProblem {
             terminateNow = terminatedList.reduce((prev, curr) => curr ? true: prev, false)
             // print to screen every so often
             if(currentSimCount % 10){
-                process.stdout.write(`Running simulation ${currentSimCount} of ${this.maxNumberOfSimulations}\r`)
+                process.stdout.write(`Running simulation ${currentSimCount} of ${this.maxNumberOfSimulations}. Best MakeSpan so far ${bestMakeSpan} on simulation number ${bestMakeSpanIndex} \r`)
             }
             const oned = this.onedArrayOfJobs()
             const ganttChart:Map<number, number[]> =  this.oneDToGanttChart(oned)
@@ -262,6 +275,8 @@ class JobShopProblem {
             if(makespan < bestMakeSpan){
                 bestMakeSpan = makespan
                 bestGanttChart = ganttChart
+                this.best1Dsolution = oned
+                bestMakeSpanIndex = currentSimCount
             }
             currentSimCount += 1
         }

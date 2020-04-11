@@ -1,5 +1,5 @@
 import JobShopProblem from "./jobShop";
-import { IOperation, IComplexOperation, ComplexOperationTypeEnum, IComplexOperationUnionList, ISolutionParamters } from "./interface";
+import { IOperation, IComplexOperation, ComplexOperationTypeEnum, IComplexOperationUnionList, ISolutionParamters, JobShopAlgorithmEnum } from "./interface";
 const util = require('util');
 
 const job = new JobShopProblem()
@@ -99,7 +99,8 @@ console.log(util.inspect(job, {showHidden: false, depth: null}))
 
 const solParams:ISolutionParamters = {
     maxNumberOfSimulations:6000000,
-    maxSecondsToRun: 5
+    maxSecondsToRun: 500,
+    algorithm: JobShopAlgorithmEnum.HILL_CLIMBING
 }
 job.setSolutionParameters(solParams)
 
