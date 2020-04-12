@@ -190,7 +190,8 @@ class JobShopProblem {
                 jobEarliestStartMap.set(jobId, endTime + 1);
             }
 
-            // at the end, incremebt the index of operation
+            // at the end, incremebt the index of operation ...
+            // Open Question? What if the job is of type CAN_BE_SPLIT in 4 equal parts?
             machineIndexTrackingMap.set(jobId, operationIndex+1 )
         })
         return ganttChartMachineMap
