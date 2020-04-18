@@ -1,7 +1,8 @@
 // This file contains classes for running job shop problems. 
 import { 
     IComplexOperationUnion, 
-    IJob, 
+    IJob,
+    IInventory,
     IMachine, 
     IOperation, 
     ComplexOperationTypeEnum, 
@@ -10,17 +11,20 @@ import {
     ITerminationCriteriaFunction, 
     JobShopAlgorithmEnum, 
     ISolutionParamters,
+    RandomAlgorithmEnum
 } from "./interface";
 
 class JobShopProblem {
     
-    machines: Map<number,IMachine>; 
+    machines: Map<number,IMachine>
     jobs: Map<number, IJob>
+    inventory: Map<number, IInventory>// number represents JobId
     maxNumberOfSimulations: number | null
     maxSecondsToRun: number // Can never be null 
     algorithm: JobShopAlgorithmEnum
     hillClimbingRandomRestartPercent: number
-    terminationCriteriaFuncs:ITerminationCriteriaFunction[];
+    terminationCriteriaFuncs:ITerminationCriteriaFunction[]
+    randomAlgorithm:RandomAlgorithmEnum
 
     // Output properties....
     best1Dsolution: number[] // Need to keep track of this for hill climbinh algorithm.
@@ -42,6 +46,7 @@ class JobShopProblem {
         this.totalRestarts = 0
         this.terminationCriteriaFuncs = this.generateDefaultTerminationCriteriaFunctions();
         this.bestMakeSpanLocal = Infinity
+        this.randomAlgorithm = RandomAlgorithmEnum.FISHERYATES
     }
     addJob(job:IJob){
         this.jobs.set(job.id, job)
@@ -76,6 +81,9 @@ class JobShopProblem {
         }
         if(params.hillClimbingRandomRestartPercent){
             this.hillClimbingRandomRestartPercent = params.hillClimbingRandomRestartPercent
+        }
+        if(params.randomAlgorithm){
+            this.randomAlgorithm = params.randomAlgorithm
         }
     }
     addTerminationCriteria(terminationFunction:ITerminationCriteriaFunction){
@@ -150,8 +158,9 @@ class JobShopProblem {
             const scheduleSoFar = ganttChartMachineMap.get(operation.machine)
             const earliestMachineAvailableTime = scheduleSoFar.length === 0 ? 0 :scheduleSoFar[scheduleSoFar.length-1] + 1
             const earliestJobStartTime = jobEarliestStartMap.get(jobId);
+            const job:IJob = this.jobs.get(jobId);
             const startTime = Math.max(earliestMachineAvailableTime, earliestJobStartTime)
-            const endTime = startTime + operation.time
+            const endTime = startTime + (operation.time * job.requiredInventory)
             if(scheduleSoFar.length === 0){
                 ganttChartMachineMap.set(operation.machine, [jobId, startTime , endTime])
             } else {
@@ -205,6 +214,11 @@ class JobShopProblem {
                 const a = new Array(opcount).fill(k)
                 arr = arr.concat(a)
             })
+            //console.log("returning array ", arr)
+            // return arr
+            if(this.randomAlgorithm === RandomAlgorithmEnum.NORANDOM){
+                return arr 
+            }
             arr = this.FisherYatesShuffle(arr)
             return arr
         }

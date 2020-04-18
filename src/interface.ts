@@ -4,6 +4,23 @@ interface IMachine {
     tags?: string[]
 };
 
+interface ISKU {
+    id: number
+    name: string
+}
+
+interface IInventory {
+    id: number
+    skuId: number // ISKU.id
+    existingInventory: number
+    requiredInventory: number   
+}
+
+interface IAsset {
+    id: number
+    machine?: number
+    sku?: number
+}
 
 type IComplexOperationUnion = IOperation | IComplexOperation;
 type IComplexOperationUnionList = (IOperation | IComplexOperation )[];
@@ -30,6 +47,7 @@ interface IJob {
     id: number
     name: string
     operations: IComplexOperationUnionList
+    requiredInventory: number
 };
 
 interface IOperation {
@@ -54,18 +72,26 @@ enum JobShopAlgorithmEnum {
     HILL_CLIMBING_WITH_RESTARTS,
     // GENETIC_ALGORITHM
 }
+enum RandomAlgorithmEnum {
+    FISHERYATES,
+    NORANDOM // this will cause every simulation to run with same job ... only used for benchmarking...
+}
 
 interface ISolutionParamters {
     maxNumberOfSimulations?: number
     maxSecondsToRun?: number
     algorithm?: JobShopAlgorithmEnum
     hillClimbingRandomRestartPercent?: number
+    randomAlgorithm: RandomAlgorithmEnum
 }
 
 export {
     IOperation,
     IJob,
     IMachine,
+    ISKU,
+    IInventory,
+    IAsset,
     IComplexOperation,
     IComplexOperationUnion,
     IComplexOperationUnionList,
@@ -74,5 +100,6 @@ export {
     ITerminationCriteriaFunctionArguments,
     JobShopAlgorithmEnum,
     ISolutionParamters,
-    ICostFunction
+    ICostFunction,
+    RandomAlgorithmEnum
 }
