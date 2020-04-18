@@ -1,7 +1,9 @@
 import JobShopProblem from "./jobShop";
 import { IOperation, IComplexOperation, ComplexOperationTypeEnum, IComplexOperationUnionList, ISolutionParamters, JobShopAlgorithmEnum, RandomAlgorithmEnum } from "./interface";
-import { prependOnceListener } from "cluster";
 const util = require('util');
+
+import simpleJobShop from "./examples/simpleJobShop";
+simpleJobShop()
 
 
 
@@ -87,7 +89,7 @@ job.addJob({
     id:5,
     name:"32 OZ Water Bottle",
     operations: operations_a,
-    requiredInventory: 1000
+    requiredInventory: 1
 });
  
 const operations_b: IComplexOperationUnionList = operationsFactory(50, 60, 10,10,16)
@@ -95,7 +97,7 @@ job.addJob({
     id:20,
     name:"16 OZ Water Bottle",
     operations: operations_b,
-    requiredInventory: 600
+    requiredInventory: 1
 });
 
 const operations_c: IComplexOperationUnionList = operationsFactory(30, 90, 20, 10, 16)
@@ -103,14 +105,14 @@ job.addJob({
     id:30,
     name:"16 OZ Water Bottle",
     operations: operations_c,
-    requiredInventory: 800
+    requiredInventory: 1
 });
 const operations_d: IComplexOperationUnionList = operationsFactory(15, 90, 20, 10, 10,)
 job.addJob({
     id:40,
     name:"31 OZ Coca Cola",
     operations: operations_d,
-    requiredInventory: 50
+    requiredInventory: 1
 });
 
 // const operations_e: IComplexOperationUnionList = operationsFactory(405, 240, 40, 500, 40, 80)
@@ -140,9 +142,9 @@ const operationsRandomFactory = (numberOfJobs) => {
 console.log(util.inspect(job, {showHidden: false, depth: null}))
 
 const solParams:ISolutionParamters = {
-    maxNumberOfSimulations:100000,
+    maxNumberOfSimulations:100,
     maxSecondsToRun: 5000,
-    algorithm: JobShopAlgorithmEnum.HILL_CLIMBING_WITH_RESTARTS,
+    algorithm: JobShopAlgorithmEnum.HILL_CLIMBING,
     hillClimbingRandomRestartPercent: .0001, // restart 0.0001 percent of the time. Gives the algorithm enough time to discover a local minima.
     randomAlgorithm: RandomAlgorithmEnum.FISHERYATES
     // Smaller than number better chance the algorithm has to discover local minima... important during large 
@@ -156,3 +158,9 @@ solParams.maxNumberOfSimulations = 10
 job.setSolutionParameters(solParams)
 const bestGanttChart2  = job.solve();
 console.log(bestGanttChart2)
+
+const timeSlice  = 150
+// Take the bestGanttChart, at a certain slice of time, and then... 
+// create a new job with left over objects .. Each job will have a cost to move.
+// Cost... 
+// Start a hill climbing algorithm

@@ -140,13 +140,13 @@ class JobShopProblem {
     }
 
     oneDToGanttChart(oned){
-        const ganttChartMachineMap:Map<number,number[]> = new Map()
+        const ganttChartMachineMap:Map<number,number[]> = new Map() // number is machine ID,  and number[] is schedule for machine. [ Job id, starttime, endTime, ...repeat ]
         this.machines.forEach((value,key) => {
             ganttChartMachineMap.set(key,[])
         })
-        const machineIndexTrackingMap:Map<number, number> = new Map() // could do this with array. just easier to read with Map
+        const jobOperationIndexTrackingMap:Map<number, number> = new Map() // could do this with array. just easier to read with Map
         this.jobs.forEach((value, key) => {
-            machineIndexTrackingMap.set(key,0) // start on zero index
+            jobOperationIndexTrackingMap.set(key,0) // start on zero index as in first operation.
         })
         const jobEarliestStartMap:Map<number, number> = new Map()
         this.jobs.forEach((value, key) => {
@@ -171,7 +171,7 @@ class JobShopProblem {
         }
         oned.forEach( (jobId, idx, arr) => {
             const job:IJob = this.jobs.get(jobId);
-            const operationIndex:number = machineIndexTrackingMap.get(jobId)
+            const operationIndex:number = jobOperationIndexTrackingMap.get(jobId)
             const operation = job.operations[operationIndex]
             
             // adding to schedule 
@@ -201,7 +201,7 @@ class JobShopProblem {
 
             // at the end, incremebt the index of operation ...
             // Open Question? What if the job is of type CAN_BE_SPLIT in 4 equal parts?
-            machineIndexTrackingMap.set(jobId, operationIndex+1 )
+            jobOperationIndexTrackingMap.set(jobId, operationIndex+1 )
         })
         return ganttChartMachineMap
     }
