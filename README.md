@@ -36,6 +36,8 @@ A list of operations in Job definition will assume precendence based on index of
 However, for example, if you can run Job 1, 2, and 3 at the same time, but 4th can be run only after the first three are done, you can do so by
 create a Complex Operation. see `examples/complexJobShop.ts` file for how to do this. 
 
+If one machine can handle multiple operations at the same time, add them as seperate machines.
+
 I believe assuming things for scheduling allows for much intuitive API usage hence the design that assumes certain things.
 
 ## How to use the library?
