@@ -34,7 +34,8 @@ by defining overlap constraints. I think thats unnecessarily verbose. This libra
 
 A list of operations in Job definition will assume precendence based on index of the array. First item in the array has to be done before second.
 However, for example, if you can run Job 1, 2, and 3 at the same time, but 4th can be run only after the first three are done, you can do so by
-create a Complex Operation. see `examples/complexJobShop.ts` file for how to do this. 
+create a Complex Operation. You'd add a complex operation consisting of jobs 1,2 and 3, and assign it type `ComplexOperationTypeEnum.CAN_RUN_IN_PARALLEL,`.  
+See `examples/complexJobShop.ts` file for how to do this. 
 
 If one machine can handle multiple operations at the same time, add them as seperate machines.
 
