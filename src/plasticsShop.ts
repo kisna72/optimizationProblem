@@ -1,22 +1,15 @@
 import JobShopProblem from "./jobShop";
 import {
-    IPlasticsJob,
-} from "./plasticShopInterface";
-import {
     ID,
     IScheduleTuple,
     IComplexOperationUnion, 
-    IJob,
     IInventory,
-    IResource, 
     IOperation, 
     ComplexOperationTypeEnum, 
     IComplexOperation, 
-    ResourceTypeEnum
-} from "./interface";
-import { start } from "repl";
-
-
+    ResourceTypeEnum,
+    IPlasticsJob,
+} from "./interfaces/interface";
 
 /**
  * Plastics Shop allows us to modify the onedToGanttChart function so that we can allocate the cost of switching jobs as well as switching materials

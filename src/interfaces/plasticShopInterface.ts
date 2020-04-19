@@ -1,14 +1,5 @@
 import { ISKU, IJob } from "./interface";
 
-enum MaterialEnum {
-    ACETAL,
-    PP
-}
-
-interface IPlasticsJob extends IJob {
-    id: number|string 
-    material: MaterialEnum
-}
 
 enum InjectionMachineClass {
     A, // light weight 
@@ -66,7 +57,5 @@ export {
     IPlasticsShopSKU,
     IInventoryData,
     IInspectorPacker,
-    IMaterial,
-    IPlasticsJob,
-    MaterialEnum
+    IMaterial
 }

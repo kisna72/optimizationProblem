@@ -95,6 +95,17 @@ interface ISolutionParamters {
     randomAlgorithm?: RandomAlgorithmEnum
 }
 
+enum MaterialEnum {
+    ACETAL,
+    PP
+}
+
+interface IPlasticsJob extends IJob {
+    id: number|string 
+    material: MaterialEnum
+}
+
+
 export {
     IOperation,
     IJob,
@@ -114,5 +125,7 @@ export {
     RandomAlgorithmEnum,
     ResourceTypeEnum,
     IScheduleTuple,
-    ID
+    ID,
+    MaterialEnum,
+    IPlasticsJob
 }

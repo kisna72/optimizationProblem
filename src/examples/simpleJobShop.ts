@@ -1,5 +1,5 @@
 import JobShopProblem from "../jobShop";
-import { IOperation, IComplexOperationUnionList, ISolutionParamters, JobShopAlgorithmEnum, RandomAlgorithmEnum } from "../interface";
+import { IOperation, IComplexOperationUnionList, ISolutionParamters, JobShopAlgorithmEnum, RandomAlgorithmEnum } from "../interfaces/interface";
 const util = require('util');
 
 

@@ -1,7 +1,6 @@
 const util = require('util');
 import { PlasticsShop } from "../plasticsShop";
-import { MaterialEnum } from "../plasticShopInterface";
-import { IOperation, IComplexOperation, ComplexOperationTypeEnum, JobShopAlgorithmEnum, IResource, ResourceTypeEnum } from "../interface";
+import { IOperation, IComplexOperation, ComplexOperationTypeEnum, JobShopAlgorithmEnum, IResource, ResourceTypeEnum, MaterialEnum } from "../interfaces/interface";
 /**
  * In this fictional example, we will use PlasticsShop class to find optimal solution for how to manufacture three cases 
  * - IPhone 11 Case using Acetal Material 

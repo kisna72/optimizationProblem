@@ -12,7 +12,7 @@ import {
     ISolutionParamters,
     RandomAlgorithmEnum,
     ResourceTypeEnum
-} from "./interface";
+} from "./interfaces/interface";
 
 class JobShopProblem {
     
