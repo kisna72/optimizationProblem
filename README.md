@@ -1,32 +1,42 @@
-# optimizationProblem
+# Optimization Problem
 
-Want to run discreet optimization problems purely in javascript? You are in the right place.
+Want to run discreet optimization problems purely in Typescript (javascript)? You are in the right place.
 
 ## FAQ
 
 1. Isn't javascript slow? Why run compute intensive code with javascript? 
 
-I haven't run benchmarks of this code against other libraries or professional software like CPLEX, however
-if you are a javascript developer you will spend a lot less time using this library than learning another 
-tool. Additionally, the library is able to come up with a fairly good solution in less than a minute for 
-jobs with more than 100 Jobs with 5 operations each. Plus you can always tweak the parameters to speed it up. 
+    I haven't run benchmarks of this code against other libraries or professional software like CPLEX, however
+    if you are a javascript developer you will spend a lot less time using this library than learning another 
+    tool. Additionally, the library is able to come up with a fairly good solution in less than a minute for 
+    jobs with more than 100 Jobs with 5 operations each. Plus you can always tweak the parameters to speed it up. 
 
-The reason I built this in javascript is to help people who already have nodejs based application that needs a 
-light weight optimization algorithm. 
+    The reason I built this in javascript is to help people who already have nodejs based application that needs a 
+    light weight optimization algorithm. 
 
 
 2. What type of optimization is supported?
 
-At the moment, only Job Shop type problems can be solved. I say Job Shop Type because you can solve problems 
-that have N number of things that need to be done in some order with some constraints. 
+    At the moment, only Scheduling problems (Job Shop Type) can be solved. I say Job Shop Type because you can solve problems 
+    that have N number of things that need to be done in some order with some constraints. 
 
-Send examples of problems you are working on, and i can add it to the library. 
+    Send examples of problems you are working on, and i can add it to the library. 
 
 3. Why Typescript?
 
-Maintenance becomes easier for me. Valid javascript is valid typescript so typescript provides an optional type checking. 
+    Maintenance becomes easier for me. Valid javascript is valid typescript so typescript provides an optional type checking. 
 
 
+## Philosophy 
+
+Many OR libraries explictly want you to define sequence via precedence constraint, and constraint that machine can only do one thing at a time 
+by defining overlap constraints. I think thats unnecessarily verbose. This library assumes the two things making it less verbose to work with.
+
+A list of operations in Job definition will assume precendence based on index of the array. First item in the array has to be done before second.
+However, for example, if you can run Job 1, 2, and 3 at the same time, but 4th can be run only after the first three are done, you can do so by
+create a Complex Operation. see `examples/complexJobShop.ts` file for how to do this. 
+
+I believe assuming things for scheduling allows for much intuitive API usage hence the design that assumes certain things.
 
 ## How to use the library?
 
@@ -46,13 +56,19 @@ Modify `index.ts` file to develop your model.
 This library is written in Typescript so if your project is javascript you'll need to transpile it. Follow the steps above, then run 
 `npx tsc .\src\jobShop.ts` which will product a javascript file you can import into your project. 
 
+### Example folder
+
+If you are a learn by example kind of person - please see examples folder. Use them to follow how to create the models.
+
 ### Import the library and instantiate
+
 Import the library to your project. If you want to experiment, feel free to add this code to index.js file. 
 
 ```
 import JobShopProblem from "./jobShop";
 const job = new JobShopProblem()
 ```
+
 
 ### Add Machines
 
