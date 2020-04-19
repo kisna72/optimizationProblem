@@ -1,9 +1,8 @@
 // This file contains classes for running job shop problems. 
-import { 
+import {
     IComplexOperationUnion, 
     IJob,
-    IInventory,
-    IMachine, 
+    IResource,
     IOperation, 
     ComplexOperationTypeEnum, 
     IComplexOperation, 
@@ -11,14 +10,14 @@ import {
     ITerminationCriteriaFunction, 
     JobShopAlgorithmEnum, 
     ISolutionParamters,
-    RandomAlgorithmEnum
+    RandomAlgorithmEnum,
+    ResourceTypeEnum
 } from "./interface";
 
 class JobShopProblem {
     
-    machines: Map<number,IMachine>
+    resources: Map<number,IResource>
     jobs: Map<number, IJob>
-    inventory: Map<number, IInventory>// number represents JobId
     maxNumberOfSimulations: number | null
     maxSecondsToRun: number // Can never be null 
     algorithm: JobShopAlgorithmEnum
@@ -37,7 +36,7 @@ class JobShopProblem {
     defaultCostFunction: (a:number) => {}
 
     constructor(){
-        this.machines = new Map()
+        this.resources = new Map()
         this.jobs = new Map()
         this.maxNumberOfSimulations = 100000 // default unless set otherwise
         this.maxSecondsToRun = 30 // default unless set otherwise.
@@ -60,14 +59,29 @@ class JobShopProblem {
      * @param tags 
      */
     addMachine(name:string, tags?:string[]){
-        const id = Array.from(this.machines.keys()).reduce( (prev: number, curr: number) => curr >= prev ? curr + 1 : prev, 0)
-        const machine: IMachine = {
+        const id = Array.from(this.resources.keys()).reduce( (prev: number, curr: number) => curr >= prev ? curr + 1 : prev, 0)
+        const machine: IResource = {
             id:id,
             name:name,
+            type:ResourceTypeEnum.MACHINE,
             ...(tags && {tags:tags})
         }
-        this.machines.set(id, machine)
+        this.resources.set(id, machine)
         return id
+    }
+    addResource(resource:IResource){
+        if(!resource.id){
+            const id = Array.from(this.resources.keys()).reduce( (prev: number, curr: number) => curr >= prev ? curr + 1 : prev, 0)
+            const _resource: IResource = {
+                ...resource,
+                id:id,
+            }
+            this.resources.set(id, _resource)
+            return id
+        } else {
+            this.resources.set(resource.id, resource)
+            return resource.id
+        }
     }
     setSolutionParameters(params:ISolutionParamters):void {
         if(params.maxNumberOfSimulations) {
@@ -141,7 +155,7 @@ class JobShopProblem {
 
     oneDToGanttChart(oned){
         const ganttChartMachineMap:Map<number,number[]> = new Map() // number is machine ID,  and number[] is schedule for machine. [ Job id, starttime, endTime, ...repeat ]
-        this.machines.forEach((value,key) => {
+        this.resources.forEach((value,key) => {
             ganttChartMachineMap.set(key,[])
         })
         const jobOperationIndexTrackingMap:Map<number, number> = new Map() // could do this with array. just easier to read with Map

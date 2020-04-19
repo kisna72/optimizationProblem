@@ -1,8 +1,14 @@
-interface IMachine {
-    id: number // this is the key from machineMap
+enum ResourceTypeEnum {
+    MACHINE,
+    PERSON
+}
+interface IResource {
+    id?: number // this is the key from machineMap
+    type?: ResourceTypeEnum
     name?: string 
     tags?: string[]
 };
+
 
 interface ISKU {
     id: number
@@ -22,8 +28,11 @@ interface IAsset {
     sku?: number
 }
 
+// Use I prefix for types to make it easy to use auto complete. 
 type IComplexOperationUnion = IOperation | IComplexOperation;
 type IComplexOperationUnionList = (IOperation | IComplexOperation )[];
+type ID = number | string
+type IScheduleTuple = [ID, number, number]
 
 // Why send all these to every termination argument? because it allows us to 
 // create a generic terminal function that can be run reliably. 
@@ -48,6 +57,7 @@ interface IJob {
     name: string
     operations: IComplexOperationUnionList
     requiredInventory: number
+    running?: boolean // If this job is already running    
 };
 
 interface IOperation {
@@ -82,13 +92,13 @@ interface ISolutionParamters {
     maxSecondsToRun?: number
     algorithm?: JobShopAlgorithmEnum
     hillClimbingRandomRestartPercent?: number
-    randomAlgorithm: RandomAlgorithmEnum
+    randomAlgorithm?: RandomAlgorithmEnum
 }
 
 export {
     IOperation,
     IJob,
-    IMachine,
+    IResource,
     ISKU,
     IInventory,
     IAsset,
@@ -101,5 +111,8 @@ export {
     JobShopAlgorithmEnum,
     ISolutionParamters,
     ICostFunction,
-    RandomAlgorithmEnum
+    RandomAlgorithmEnum,
+    ResourceTypeEnum,
+    IScheduleTuple,
+    ID
 }
