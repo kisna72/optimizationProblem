@@ -9,13 +9,19 @@ import {
     IComplexOperation, 
     ResourceTypeEnum,
     IPlasticsJob,
+    IResource,
+    ISolutionParamters,
+    ITerminationCriteriaFunction
 } from "./interfaces/interface";
 
 /**
- * Plastics Shop allows us to modify the onedToGanttChart function so that we can allocate the cost of switching jobs as well as switching materials
- * 
+ * Plastics Shop allows us to modify the onedToGanttChart function so that we can 
+ * - redefine the cost function by accounting for job switch and material switch costs (time)
+ * - Use IPlasticsJob data type for jobs which includes additional property such as material property 
+ * - redefine onedtoGanttChart function to account for the job switch time and material switch time
  */
-class PlasticsShop extends JobShopProblem {
+class PlasticsShop {
+    jssp:JobShopProblem;
     jobSwitchTimePenalty:number
     materialSwitchTimePenalty:number
     inventory: Map<number, IInventory>// number represents JobId
@@ -24,19 +30,30 @@ class PlasticsShop extends JobShopProblem {
     jobs: Map<ID, IPlasticsJob>
 
     constructor(){
-        super()
+        this.jssp = new JobShopProblem()
         this.jobSwitchTimePenalty = 60 * 60 // 60 mins converted to seconds
         this.materialSwitchTimePenalty = 2 * 60 * 60 //2 hours converted to seconds
-        this.jobSwitchJobId = -1 // switch over
-        this.materialSwitchJobId = -2 // switch over + material change
     }
-
     // Update definition of Plastics Job
     addJob(job:IPlasticsJob):void{
         this.jobs.set(job.id, job)
         // this.calculateNumberOfOperations()
     }
-    
+    addMachine(name:string, tags?: string[]){
+        return this.jssp.addMachine(name, tags);
+    }
+    addResource(resource:IResource){
+        return this.jssp.addResource(resource);
+    }
+    setSolutionParameters(params:ISolutionParamters):void {
+        this.jssp.setSolutionParameters(params);
+    }
+    addTerminationCriteria(terminationFunction:ITerminationCriteriaFunction){
+        this.jssp.addTerminationCriteria(terminationFunction);
+    }
+    isOperationComplex(operation: IComplexOperationUnion){
+        return this.jssp.isOperationComplex(operation);
+    }
     costFunction(ganttChart:Map<ID,IScheduleTuple[]>){
         const makeSpan = Array.from(ganttChart.values()).reduce((prev, currentListOfScheduleTuple) => {
             let lastTime:number;
@@ -63,7 +80,7 @@ class PlasticsShop extends JobShopProblem {
      */
     oneDToGanttChart(oned: number[]): Map<ID,IScheduleTuple[]> {
         const ganttChartMachineMap:Map<ID,IScheduleTuple[]> = new Map() // number is machine ID,  and number[] is schedule for machine. [ Job id, starttime, endTime, ...repeat ]
-        this.resources.forEach((value,key) => {
+        this.jssp.resources.forEach((value,key) => {
             ganttChartMachineMap.set(key,[])
         })
         const jobOperationIndexTrackingMap:Map<ID, number> = new Map() // could do this with array. just easier to read with Map
@@ -77,7 +94,7 @@ class PlasticsShop extends JobShopProblem {
 
         // Helper to add operation 
         const addOperationToSchedule = (operation:IOperation, jobId:number) => {
-            const machineForCurrentOperation = this.resources.get(operation.machine)
+            const machineForCurrentOperation = this.jssp.resources.get(operation.machine)
             
             const scheduleSoFar = ganttChartMachineMap.get(operation.machine)
             const earliestMachineAvailableTime = scheduleSoFar.length === 0 ? 0 :scheduleSoFar[scheduleSoFar.length-1][2] + 1
@@ -160,6 +177,3 @@ class PlasticsShop extends JobShopProblem {
 }
 
 export { PlasticsShop }
-
-
-

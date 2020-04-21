@@ -119,6 +119,34 @@ export default () => { // Wrap with arrow function so we can import in index.ts 
     })
     const ganttChart = pj.solve()
     console.log(util.inspect(ganttChart, {showHidden: false, depth: null}))
-    //console.log(ganttChart)
+    // console.log(ganttChart)
 
+    // Now that we have the GanttChart, with best time of 11501, lets assume that on T = 5000, we want to add a new hotJob.
+    const hotJobIMMOperation:IComplexOperation = {
+        type: ComplexOperationTypeEnum.CAN_RUN_IN_MULTIPLE_MACINES,
+        operations: [
+            {
+                machine:imm1,
+                time:20
+            },
+            {
+                machine: imm2,
+                time: 25
+            }
+        ]
+    }
+    pj.addJob({
+        id:"Hot Job IPhone Latest PP",
+        name:"",
+        operations:[hotJobIMMOperation],
+        requiredInventory:1,
+        material:MaterialEnum.PP
+    })
+
+    // Next, For Each Job, update required Inventory by looking at what has already been run 
+    const jobAfterTimeSlice = (jobInstance, ganttChart) => {
+
+    }
+
+    const updatedJob = jobAfterTimeSlice(pj, ganttChart)
 }

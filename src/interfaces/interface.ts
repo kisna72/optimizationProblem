@@ -52,13 +52,19 @@ interface ICostFunction {
     ():number
 }
 
-interface IJob {
-    id: number
+interface ICommonJob {
     name: string
     operations: IComplexOperationUnionList
     requiredInventory: number
     running?: boolean // If this job is already running    
+}
+interface IJob extends ICommonJob {
+    id: number
 };
+interface IPlasticsJob extends ICommonJob {
+    id: number|string 
+    material: MaterialEnum
+}
 
 interface IOperation {
     machine: number // This is machine id from Machine Map
@@ -100,10 +106,6 @@ enum MaterialEnum {
     PP
 }
 
-interface IPlasticsJob extends IJob {
-    id: number|string 
-    material: MaterialEnum
-}
 
 
 export {
