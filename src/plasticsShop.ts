@@ -11,8 +11,14 @@ import {
     IPlasticsJob,
     IResource,
     ISolutionParamters,
-    ITerminationCriteriaFunction
+    ITerminationCriteriaFunction,
+    ITerminationCriteriaFunctionArguments,
+    ISearchSpaceRandomGenerator,
+    IBestSolutionArgument,
+    JobShopAlgorithmEnum,
+    RandomAlgorithmEnum
 } from "./interfaces/interface";
+import { FisherYatesShuffle } from "./helpers"
 
 /**
  * Plastics Shop allows us to modify the onedToGanttChart function so that we can 
@@ -33,9 +39,10 @@ class PlasticsShop {
         this.jssp = new JobShopProblem()
         this.jobSwitchTimePenalty = 60 * 60 // 60 mins converted to seconds
         this.materialSwitchTimePenalty = 2 * 60 * 60 //2 hours converted to seconds
+        this.jobs = new Map()
     }
     // Update definition of Plastics Job
-    addJob(job:IPlasticsJob):void{
+    addJob(job:IPlasticsJob):void {
         this.jobs.set(job.id, job)
         // this.calculateNumberOfOperations()
     }
@@ -173,6 +180,151 @@ class PlasticsShop {
             jobOperationIndexTrackingMap.set(jobId, operationIndex+1 )
         })
         return ganttChartMachineMap
+    }
+    onedArrayOfJobs(){
+        const getRandomArrayOfJobs = () => {
+            let arr = []
+            this.jobs.forEach( (v,k) => {
+                const opcount = v.operations.length
+                const a = new Array(opcount).fill(k)
+                arr = arr.concat(a)
+            })
+            //console.log("returning array ", arr)
+            // return arr
+            if(this.jssp.randomAlgorithm === RandomAlgorithmEnum.NORANDOM){
+                return arr 
+            }
+            arr = FisherYatesShuffle(arr)
+            return arr
+        }
+        const swap = (base) => {
+            const randi = Math.floor(Math.random() * base.length )
+            let randj = Math.floor(Math.random() * base.length )
+            while(base[randi] === base[randj]){ // no point in swapping the same number.
+                randj = Math.floor(Math.random() * base.length )
+            }
+            const randiVal = base[randi]
+            base[randi] = base[randj]
+            base[randj] = randiVal
+            return base
+        }
+
+        if(!this.jssp.best1Dsolution){
+            return getRandomArrayOfJobs()
+        }
+
+        if(this.jssp.algorithm === JobShopAlgorithmEnum.RANDOM){
+            return getRandomArrayOfJobs()
+        } else if (this.jssp.algorithm === JobShopAlgorithmEnum.HILL_CLIMBING){
+            return swap(this.jssp.best1Dsolution)
+        } else if (this.jssp.algorithm === JobShopAlgorithmEnum.HILL_CLIMBING_WITH_RESTARTS){
+            const randomPercent = Math.random() * 100
+            // eg: percent = 20.There is a 20% chance that randomPercent is 20 or less. 
+            // so if randomPercent is 20 or less, we add randomness, else we keep hill climbing. 
+            const useRandom = randomPercent < this.jssp.hillClimbingRandomRestartPercent ? true : false
+            if(useRandom){
+                this.jssp.totalRestarts += 1
+                //makeSpansForCsv.push(90000)
+                const oned = getRandomArrayOfJobs()
+                this.jssp.best1DSolutionLocal = oned //rest best1DSolutionLocal
+                this.jssp.bestMakeSpanLocal = Infinity
+                return oned
+            } else {
+                return swap(this.jssp.best1DSolutionLocal)
+            }
+        } else {
+            throw new Error("Not implemented")
+        }
+    }
+
+    // Generic Function that keeps track of how many simulations have run so far 
+    genericSolver(
+        searchSpaceRandomGenerator:ISearchSpaceRandomGenerator,
+        searchSpaceToSolutionSpace:any,
+        defaultTerminationArgs:ITerminationCriteriaFunctionArguments, 
+        terminationCriteriaFuncs:ITerminationCriteriaFunction[],
+        loggerFunction:any){
+        
+        let terminationCriteriaMet = false
+        let currentSimCount = 0
+        const bestSolution: IBestSolutionArgument = {
+            bestSolutionSpaceRepresentation:undefined, // This is Gantt Chart
+            bestSearchSpaceRepresentation:undefined, // 1D representation
+            bestCostFunctionEval:undefined, // This is the MakeSpan
+            bestSolutionFoundAtIndex:0 // 
+        }
+
+        defaultTerminationArgs.simulationStartTime = new Date()
+
+        while(!terminationCriteriaMet){
+            const searchSpace = searchSpaceRandomGenerator(bestSolution)
+            const ganttChart = searchSpaceToSolutionSpace(searchSpace)
+            currentSimCount += 1
+            defaultTerminationArgs.currentSimulationIndex = currentSimCount
+            terminationCriteriaMet = terminationCriteriaFuncs.map(f => f(defaultTerminationArgs)).reduce((prev, curr) => curr ? true: prev, false)
+        }
+    }
+    solve(){
+        // requires Job
+        console.log("solving")
+        
+        let currentSimCount = 0
+        let terminateNow
+        let bestGanttChart;
+        let bestMakeSpan = +Infinity
+        let bestMakeSpanIndex = 0
+
+        const defaultTerminationArgs:ITerminationCriteriaFunctionArguments = {
+            currentSimulationIndex: currentSimCount,
+            simulationStartTime: new Date(),
+            maxNumberOfSimulations: this.jssp.maxNumberOfSimulations,
+            maxSecondsToRun:this.jssp.maxSecondsToRun,
+            algorithm: this.jssp.algorithm,
+        }
+        console.log("defaultTermination",  defaultTerminationArgs)
+
+        while(!terminateNow) {
+            // Update current Sim Count to run on termination criteria functions.
+            defaultTerminationArgs.currentSimulationIndex = currentSimCount
+
+            const terminatedList:boolean[] = this.jssp.terminationCriteriaFuncs.map(f => f(defaultTerminationArgs))
+            terminateNow = terminatedList.reduce((prev, curr) => curr ? true: prev, false)
+            // print to screen every so often
+            if(currentSimCount % 10){
+                process.stdout.write(`Running simulation ${currentSimCount} of ${this.jssp.maxNumberOfSimulations}. RS ${this.jssp.totalRestarts} Best MakeSpan so far ${bestMakeSpan} on simulation number ${bestMakeSpanIndex} \r`)
+            }
+            const oned = this.onedArrayOfJobs()
+            //console.log("oned ", oned)
+            const ganttChart:Map<ID,IScheduleTuple[]> =  this.oneDToGanttChart(oned)
+            const makespan = this.costFunction(ganttChart);
+            //console.log("makespan is ", makespan)
+            if(makespan < bestMakeSpan){
+                // output global makespan value here.
+                bestMakeSpan = makespan
+                bestGanttChart = ganttChart
+                this.jssp.best1Dsolution = oned
+                bestMakeSpanIndex = currentSimCount
+            }
+
+            if(this.jssp.algorithm === JobShopAlgorithmEnum.HILL_CLIMBING_WITH_RESTARTS){
+                if(makespan < this.jssp.bestMakeSpanLocal){
+                    // send makespan value here for hill climbing with restarts...
+                    this.jssp.bestMakeSpanLocal = makespan
+                    this.jssp.best1DSolutionLocal = oned
+                }
+            }
+            currentSimCount += 1
+            //console.log(currentSimCount)
+        }
+
+        console.log("Termination criteria passed")
+        console.log("shortest makespan is ", bestMakeSpan)
+        // console.log(bestGanttChart)
+        return {
+            bestGanttChart,
+            bestMakeSpan,
+            bestMakeSpanIndex
+        }
     }
 }
 

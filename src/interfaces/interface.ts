@@ -44,8 +44,18 @@ interface ITerminationCriteriaFunctionArguments {
     algorithm: JobShopAlgorithmEnum
 }
 
+interface IBestSolutionArgument {
+    bestSolutionSpaceRepresentation:number[] // This is Gantt Chart
+    bestSearchSpaceRepresentation:any // 1D representation
+    bestCostFunctionEval:number // This is the MakeSpan
+    bestSolutionFoundAtIndex:number // 
+}
+
 interface ITerminationCriteriaFunction {
     (args: ITerminationCriteriaFunctionArguments):boolean
+}
+interface ISearchSpaceRandomGenerator {
+    (args?:any):number[]
 }
 
 interface ICostFunction {
@@ -129,5 +139,7 @@ export {
     IScheduleTuple,
     ID,
     MaterialEnum,
-    IPlasticsJob
+    IPlasticsJob,
+    ISearchSpaceRandomGenerator,
+    IBestSolutionArgument
 }

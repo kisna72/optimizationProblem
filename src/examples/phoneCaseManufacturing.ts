@@ -114,7 +114,7 @@ export default () => { // Wrap with arrow function so we can import in index.ts 
     })
 
     pj.setSolutionParameters({
-        maxNumberOfSimulations:10000,
+        maxNumberOfSimulations:20,
         algorithm: JobShopAlgorithmEnum.HILL_CLIMBING_WITH_RESTARTS
     })
     const ganttChart = pj.solve()
