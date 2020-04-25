@@ -52,8 +52,9 @@ class PlasticsShop {
         // this.calculateNumberOfOperations()
     }
     addRunningJob(job: IActivePlasticsJob): void {
-        console.log("adding running job to ", this.runningJobs)
+        // console.log("adding running job to ", this.runningJobs)
         this.runningJobs.set(job.id, job)
+        this.jobs.set(job.id, job)
     }
     addMachine(name:string, tags?: string[]){
         return this.jssp.addMachine(name, tags);
@@ -107,8 +108,12 @@ class PlasticsShop {
         this.jobs.forEach((value, key) => {
             jobEarliestStartMap.set(key, 0)
         })
+        const runningMachineJobIndexTrackingMap:Map<ID, ID> = new Map() // key is macine ID, and value is Job ID
+        this.runningJobs.forEach((runningJob, key) => {
+            runningMachineJobIndexTrackingMap.set(runningJob.machine, runningJob.id)
+        })
 
-        // Helper to add operation 
+        // Helper to add operation to the earliest machine Available
         const addOperationToSchedule = (operation:IOperation, jobId:number) => {
             const machineForCurrentOperation = this.jssp.resources.get(operation.machine)
             
@@ -118,14 +123,29 @@ class PlasticsShop {
             const job:IPlasticsJob = this.jobs.get(jobId);
             const startTime = Math.max(earliestMachineAvailableTime, earliestJobStartTime)
             const endTime = startTime + (operation.time * job.requiredInventory)
-
+            
+            // Check if this machine had a job running.
+            const machineForCurrentOperationHasRunningJob = runningMachineJobIndexTrackingMap.has(operation.machine)
+            const runningJobIsDifferentThanSelectedJob = runningMachineJobIndexTrackingMap.get(operation.machine) === job.id
+            // if schedule is empty, check if machine for current operation has running jobs and if running Job is different than selectedJob
             if(scheduleSoFar.length === 0){
-                // TODO > if this job starts at a slice of time of ganttChart, usually you run it to add a new job, and to find the best
-                // way to add the new job, 
-                // if the job was 'running' and is switched - meaning new job or just run something else, 
-                // add a switch cost Plus material switch cost if aplicable here also
-                const operationSchedule:IScheduleTuple = [job.id, startTime, endTime]
-                ganttChartMachineMap.set(operation.machine, [operationSchedule])
+                if(machineForCurrentOperationHasRunningJob && runningJobIsDifferentThanSelectedJob){
+                    // First we need to add switching cost.
+                    const switchFromRunningJobCost:IScheduleTuple = ["Switch Running Job",startTime, startTime + this.jobSwitchTimePenalty ]
+                    const runningJobId = runningMachineJobIndexTrackingMap.get(operation.machine)
+                    scheduleSoFar.push(switchFromRunningJobCost)
+                    // If material of new jobis different than running job, we need to material switching cost. 
+                    const runningJob = this.jobs.get(runningJobId);
+                    if(job.material !== runningJob.material){
+                        const scheduleWithMaterialPenalty:IScheduleTuple = ["Switch Material", scheduleSoFar[scheduleSoFar.length -1][2], scheduleSoFar[scheduleSoFar.length -1][2] + this.materialSwitchTimePenalty ]
+                        scheduleSoFar.push(scheduleWithMaterialPenalty)
+                    }
+                    scheduleSoFar.push([job.id, scheduleSoFar[scheduleSoFar.length -1][2], scheduleSoFar[scheduleSoFar.length -1][2] + job.requiredInventory * operation.time])
+                    // ganttChartMachineMap.set("metadata", [["Had to Switch Jobs", 1,1] ]) // Just for Debugging Purpose
+                } else {
+                    const operationSchedule:IScheduleTuple = [job.id, startTime, endTime]
+                    scheduleSoFar.push(operationSchedule)   
+                }
             } else {
                 if(machineForCurrentOperation.type === ResourceTypeEnum.MACHINE){
                     const lastJobId = scheduleSoFar[scheduleSoFar.length - 1][0]
@@ -149,16 +169,14 @@ class PlasticsShop {
                     const operationSchedule:IScheduleTuple = [job.id, startTime, endTime]
                     scheduleSoFar.push(operationSchedule)
                 }
-                ganttChartMachineMap.set(operation.machine, scheduleSoFar)
             }
-
-            return endTime
+            ganttChartMachineMap.set(operation.machine, scheduleSoFar)
+            return scheduleSoFar[scheduleSoFar.length-1][2]
         }
         oned.forEach( (jobId, idx, arr) => {
             const job:IPlasticsJob = this.jobs.get(jobId);
             const operationIndex:number = jobOperationIndexTrackingMap.get(jobId)
             const operation = job.operations[operationIndex]
-            
             // adding to schedule 
             if(this.isOperationComplex(operation)){
                 const complexOperation = <IComplexOperation>operation // Cast to complex operation type
@@ -246,7 +264,7 @@ class PlasticsShop {
         }
     }
 
-    // Generic Function that keeps track of how many simulations have run so far 
+    // Generic Function that keeps track of how many simulations have run so far - Just an Idea .... NOT USED 
     genericSolver(
         searchSpaceRandomGenerator:ISearchSpaceRandomGenerator,
         convertSearchSpaceToSolutionSpace:any,
@@ -308,7 +326,13 @@ class PlasticsShop {
                 process.stdout.write(`Running simulation ${currentSimCount} of ${this.jssp.maxNumberOfSimulations}. RS ${this.jssp.totalRestarts} Best MakeSpan so far ${bestMakeSpan} on simulation number ${bestMakeSpanIndex} \r`)
             }
             const oned = this.onedArrayOfJobs()
+            // console.log(oned)
             const ganttChart:Map<ID,IScheduleTuple[]> =  this.oneDToGanttChart(oned)
+            // if(ganttChart.has("metadata")){
+            //     console.log("example of job switching")
+            //     console.log(ganttChart)
+            //     console.log("=======")
+            // }
             const makespan = this.costFunction(ganttChart);
             if(makespan < bestMakeSpan){
                 // output global makespan value here.
