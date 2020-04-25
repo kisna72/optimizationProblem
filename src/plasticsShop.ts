@@ -52,7 +52,7 @@ class PlasticsShop {
         // this.calculateNumberOfOperations()
     }
     addRunningJob(job: IActivePlasticsJob): void {
-        console.log("adding running job to ", this.runningJobs)
+        // console.log("adding running job to ", this.runningJobs)
         this.runningJobs.set(job.id, job)
         this.jobs.set(job.id, job)
     }
@@ -141,7 +141,7 @@ class PlasticsShop {
                         scheduleSoFar.push(scheduleWithMaterialPenalty)
                     }
                     scheduleSoFar.push([job.id, scheduleSoFar[scheduleSoFar.length -1][2], scheduleSoFar[scheduleSoFar.length -1][2] + job.requiredInventory * operation.time])
-                    ganttChartMachineMap.set("metadata", [["Had to Switch Jobs", 1,1] ]) // Just for Debugging Purpose
+                    // ganttChartMachineMap.set("metadata", [["Had to Switch Jobs", 1,1] ]) // Just for Debugging Purpose
                 } else {
                     const operationSchedule:IScheduleTuple = [job.id, startTime, endTime]
                     scheduleSoFar.push(operationSchedule)   
@@ -326,13 +326,13 @@ class PlasticsShop {
                 process.stdout.write(`Running simulation ${currentSimCount} of ${this.jssp.maxNumberOfSimulations}. RS ${this.jssp.totalRestarts} Best MakeSpan so far ${bestMakeSpan} on simulation number ${bestMakeSpanIndex} \r`)
             }
             const oned = this.onedArrayOfJobs()
-            console.log(oned)
+            // console.log(oned)
             const ganttChart:Map<ID,IScheduleTuple[]> =  this.oneDToGanttChart(oned)
-            if(ganttChart.has("metadata")){
-                console.log("example of job switching")
-                console.log(ganttChart)
-                console.log("=======")
-            }
+            // if(ganttChart.has("metadata")){
+            //     console.log("example of job switching")
+            //     console.log(ganttChart)
+            //     console.log("=======")
+            // }
             const makespan = this.costFunction(ganttChart);
             if(makespan < bestMakeSpan){
                 // output global makespan value here.
