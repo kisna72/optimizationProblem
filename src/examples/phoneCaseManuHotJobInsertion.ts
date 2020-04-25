@@ -1,8 +1,11 @@
 const util = require('util');
 import { PlasticsShop } from "../plasticsShop";
-import { IOperation, IComplexOperation, ComplexOperationTypeEnum, JobShopAlgorithmEnum, IResource, ResourceTypeEnum, MaterialEnum } from "../interfaces/interface";
+import { IOperation, IComplexOperation, IActivePlasticsJob, 
+    ComplexOperationTypeEnum, JobShopAlgorithmEnum, IResource, 
+    ResourceTypeEnum, MaterialEnum } from "../interfaces/interface";
 /**
- * In this fictional example, we will use PlasticsShop class to find optimal solution for how to manufacture three cases 
+ * In this fictional example, we will use PlasticsShop class to find optimal solution for how to insert a hot job
+ *  while the following three jobs are running 
  * - IPhone 11 Case using Acetal Material 
  * - Galaxy Case using PP Material 
  * - Mac Book using Acetal Material 
@@ -11,6 +14,7 @@ import { IOperation, IComplexOperation, ComplexOperationTypeEnum, JobShopAlgorit
  * 
  * Each job has a setup time, and if there is a material change, we will incur additional time cleaning out the old material so IMM is fresh
  */
+
 
 export default () => { // Wrap with arrow function so we can import in index.ts file
 
@@ -30,7 +34,6 @@ export default () => { // Wrap with arrow function so we can import in index.ts 
     }
     const p1Id = pj.addResource(person1);
     const p2Id = pj.addResource(person2);
-
 
     // Add Job 1: IPhone 11 Case Acetal 
     const immStepForIphoneCaseAcetal:IComplexOperation = {
@@ -52,13 +55,17 @@ export default () => { // Wrap with arrow function so we can import in index.ts 
         time: 5
     }
 
-    pj.addJob({
+    const runningIPhone11: IActivePlasticsJob = {
         id:"IPhone 11 Case Acetal",
         name:"IPhone 11 Case Acetal",
         operations: [immStepForIphoneCaseAcetal, packingStepForIphoneCaseAcetal],
         requiredInventory: 100,
-        material: MaterialEnum.ACETAL
-    })
+        material: MaterialEnum.ACETAL,
+        machine: imm1,
+        remainingTime: 400 // represents time remaining on the first operation on operations.
+    }
+
+    pj.addRunningJob(runningIPhone11)
 
     // Add Job 2: Galaxy Phone case in PP Material 
     const immStepForGalaxyPhoneCasePP:IComplexOperation = {
@@ -78,13 +85,18 @@ export default () => { // Wrap with arrow function so we can import in index.ts 
         machine:p1Id,
         time:5
     }
-    pj.addJob({
+
+    const runningGalaxy: IActivePlasticsJob = {
         id:"Galaxy Case PP",
         name:"Galaxy Case PP",
         operations: [immStepForGalaxyPhoneCasePP, packagingStepForGalaxyPhoneCasePP],
         requiredInventory: 100,
-        material: MaterialEnum.PP
-    })
+        material: MaterialEnum.PP,
+        machine: imm2,
+        remainingTime: 300
+    }
+
+    pj.addRunningJob(runningGalaxy)
 
     // Add Job 3: Mac Book Acetal Case 
     // TRY : Switching the times to 80 and 90 seconds .. which negates the material switch over time...
@@ -118,6 +130,7 @@ export default () => { // Wrap with arrow function so we can import in index.ts 
         algorithm: JobShopAlgorithmEnum.HILL_CLIMBING_WITH_RESTARTS
     })
     const ganttChart = pj.solve()
+    console.log("finished solving")
     console.log(util.inspect(ganttChart, {showHidden: false, depth: null}))
     // console.log(ganttChart)
 

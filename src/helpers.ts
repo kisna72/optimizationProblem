@@ -17,7 +17,18 @@ function FisherYatesShuffle(array) {
     return array;
 }
 
+function isArrayOfSameItems(array){
+  // assume true, and if any of the items is not the same as previous, return false
+  let allSame = true
+  for(let i = 1; i < array.length; i++){
+    if(array[i] !== array[i-1]){
+      allSame = false
+    }
+  }
+  return allSame
+}
 
 export {
-    FisherYatesShuffle
+    FisherYatesShuffle,
+    isArrayOfSameItems
 }

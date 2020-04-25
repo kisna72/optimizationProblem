@@ -9,42 +9,51 @@ import {
     IComplexOperation, 
     ResourceTypeEnum,
     IPlasticsJob,
+    IActivePlasticsJob,
     IResource,
     ISolutionParamters,
     ITerminationCriteriaFunction,
     ITerminationCriteriaFunctionArguments,
     ISearchSpaceRandomGenerator,
-    IBestSolutionArgument,
+    IBestSolution,
     JobShopAlgorithmEnum,
     RandomAlgorithmEnum
 } from "./interfaces/interface";
-import { FisherYatesShuffle } from "./helpers"
+import { FisherYatesShuffle, isArrayOfSameItems } from "./helpers"
 
 /**
  * Plastics Shop allows us to modify the onedToGanttChart function so that we can 
  * - redefine the cost function by accounting for job switch and material switch costs (time)
  * - Use IPlasticsJob data type for jobs which includes additional property such as material property 
  * - redefine onedtoGanttChart function to account for the job switch time and material switch time
+ * 
+ *  Future Features
+ *  Assets required as a constraint, 
+ *  Hot Job Insertion, Scheduling On Top of existing runs
  */
 class PlasticsShop {
     jssp:JobShopProblem;
     jobSwitchTimePenalty:number
     materialSwitchTimePenalty:number
     inventory: Map<number, IInventory>// number represents JobId
-    jobSwitchJobId: number
-    materialSwitchJobId: number
     jobs: Map<ID, IPlasticsJob>
+    runningJobs: Map<ID, IActivePlasticsJob> // What jobs are running right now? 
 
     constructor(){
         this.jssp = new JobShopProblem()
         this.jobSwitchTimePenalty = 60 * 60 // 60 mins converted to seconds
         this.materialSwitchTimePenalty = 2 * 60 * 60 //2 hours converted to seconds
         this.jobs = new Map()
+        this.runningJobs = new Map()
     }
     // Update definition of Plastics Job
     addJob(job:IPlasticsJob):void {
         this.jobs.set(job.id, job)
         // this.calculateNumberOfOperations()
+    }
+    addRunningJob(job: IActivePlasticsJob): void {
+        console.log("adding running job to ", this.runningJobs)
+        this.runningJobs.set(job.id, job)
     }
     addMachine(name:string, tags?: string[]){
         return this.jssp.addMachine(name, tags);
@@ -189,8 +198,6 @@ class PlasticsShop {
                 const a = new Array(opcount).fill(k)
                 arr = arr.concat(a)
             })
-            //console.log("returning array ", arr)
-            // return arr
             if(this.jssp.randomAlgorithm === RandomAlgorithmEnum.NORANDOM){
                 return arr 
             }
@@ -198,6 +205,9 @@ class PlasticsShop {
             return arr
         }
         const swap = (base) => {
+            if(isArrayOfSameItems(base)){
+                return base
+            }
             const randi = Math.floor(Math.random() * base.length )
             let randj = Math.floor(Math.random() * base.length )
             while(base[randi] === base[randj]){ // no point in swapping the same number.
@@ -208,7 +218,6 @@ class PlasticsShop {
             base[randj] = randiVal
             return base
         }
-
         if(!this.jssp.best1Dsolution){
             return getRandomArrayOfJobs()
         }
@@ -240,14 +249,15 @@ class PlasticsShop {
     // Generic Function that keeps track of how many simulations have run so far 
     genericSolver(
         searchSpaceRandomGenerator:ISearchSpaceRandomGenerator,
-        searchSpaceToSolutionSpace:any,
+        convertSearchSpaceToSolutionSpace:any,
+        fitnessFunction:any,
         defaultTerminationArgs:ITerminationCriteriaFunctionArguments, 
         terminationCriteriaFuncs:ITerminationCriteriaFunction[],
         loggerFunction:any){
         
         let terminationCriteriaMet = false
         let currentSimCount = 0
-        const bestSolution: IBestSolutionArgument = {
+        const bestSolution: IBestSolution = {
             bestSolutionSpaceRepresentation:undefined, // This is Gantt Chart
             bestSearchSpaceRepresentation:undefined, // 1D representation
             bestCostFunctionEval:undefined, // This is the MakeSpan
@@ -257,8 +267,12 @@ class PlasticsShop {
         defaultTerminationArgs.simulationStartTime = new Date()
 
         while(!terminationCriteriaMet){
-            const searchSpace = searchSpaceRandomGenerator(bestSolution)
-            const ganttChart = searchSpaceToSolutionSpace(searchSpace)
+            loggerFunction()
+            const searchSpace:number[] = searchSpaceRandomGenerator(bestSolution)
+            const ganttChart = convertSearchSpaceToSolutionSpace(searchSpace)
+            const costVal = fitnessFunction(ganttChart)
+
+
             currentSimCount += 1
             defaultTerminationArgs.currentSimulationIndex = currentSimCount
             terminationCriteriaMet = terminationCriteriaFuncs.map(f => f(defaultTerminationArgs)).reduce((prev, curr) => curr ? true: prev, false)
@@ -294,10 +308,8 @@ class PlasticsShop {
                 process.stdout.write(`Running simulation ${currentSimCount} of ${this.jssp.maxNumberOfSimulations}. RS ${this.jssp.totalRestarts} Best MakeSpan so far ${bestMakeSpan} on simulation number ${bestMakeSpanIndex} \r`)
             }
             const oned = this.onedArrayOfJobs()
-            //console.log("oned ", oned)
             const ganttChart:Map<ID,IScheduleTuple[]> =  this.oneDToGanttChart(oned)
             const makespan = this.costFunction(ganttChart);
-            //console.log("makespan is ", makespan)
             if(makespan < bestMakeSpan){
                 // output global makespan value here.
                 bestMakeSpan = makespan
@@ -314,7 +326,6 @@ class PlasticsShop {
                 }
             }
             currentSimCount += 1
-            //console.log(currentSimCount)
         }
 
         console.log("Termination criteria passed")

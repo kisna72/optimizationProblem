@@ -7,5 +7,5 @@
 // import complexJobShop from "./examples/complexJobShop";
 // complexJobShop()
 
-import phoneCaseInPlasticsShop from "./examples/phoneCaseManufacturing";
+import phoneCaseInPlasticsShop from "./examples/phoneCaseManuHotJobInsertion";
 phoneCaseInPlasticsShop()

@@ -44,7 +44,7 @@ interface ITerminationCriteriaFunctionArguments {
     algorithm: JobShopAlgorithmEnum
 }
 
-interface IBestSolutionArgument {
+interface IBestSolution {
     bestSolutionSpaceRepresentation:number[] // This is Gantt Chart
     bestSearchSpaceRepresentation:any // 1D representation
     bestCostFunctionEval:number // This is the MakeSpan
@@ -66,7 +66,6 @@ interface ICommonJob {
     name: string
     operations: IComplexOperationUnionList
     requiredInventory: number
-    running?: boolean // If this job is already running    
 }
 interface IJob extends ICommonJob {
     id: number
@@ -74,6 +73,13 @@ interface IJob extends ICommonJob {
 interface IPlasticsJob extends ICommonJob {
     id: number|string 
     material: MaterialEnum
+    running?: boolean // If this job is already running    
+}
+
+interface IActivePlasticsJob extends IPlasticsJob {
+    machine: number
+    // currentOperationIndex: number // Maybe use this in the future for more complex analytics.
+    remainingTime: number
 }
 
 interface IOperation {
@@ -141,5 +147,6 @@ export {
     MaterialEnum,
     IPlasticsJob,
     ISearchSpaceRandomGenerator,
-    IBestSolutionArgument
+    IBestSolution,
+    IActivePlasticsJob
 }
