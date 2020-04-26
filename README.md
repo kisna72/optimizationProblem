@@ -29,15 +29,23 @@ Want to run discreet optimization problems purely in Typescript (javascript)? Yo
 
 ## Philosophy 
 
-Many OR libraries explictly want you to define sequence via precedence constraint, and constraint that machine can only do one thing at a time 
-by defining overlap constraints. I think thats unnecessarily verbose. This library assumes the two things making it less verbose to work with.
+Many OR libraries explictly want you to define sequence via 
+- precedence constraint ( constraint that jobs must be run in sequence)
+- Disjunctive constraint ( constraint that machine can only do one thing at a time )
 
-A list of operations in Job definition will assume precendence based on index of the array. First item in the array has to be done before second.
-However, for example, if you can run Job 1, 2, and 3 at the same time, but 4th can be run only after the first three are done, you can do so by
+If you want to run a generic job shop problem - thats unnecessarily verbose. This library makes some assumptions about the above making it less verbose to work with.
+
+Lets assume that you are trying to run a job with four operations `[op1, op2, op3, op4]` and they are sequential, precedence is understood based on their index in the array.
+As in, op1 runs before op2, and op2 before op3 and so forth. 
+
+However, for example, if you can run operations op1, op2, and op3 at the same time, but op4 can be run only after the first three are done, you can do so by
 create a Complex Operation. You'd add a complex operation consisting of jobs 1,2 and 3, and assign it type `ComplexOperationTypeEnum.CAN_RUN_IN_PARALLEL,`.  
 See `examples/complexJobShop.ts` file for how to do this. 
 
-If one machine can handle multiple operations at the same time, add them as seperate machines.
+If one machine can handle multiple operations at the same time - for example a labeler with two labeling heads capable of 
+taking two rows of bottles, you can either
+- add them as seperate machines which makes reasoning about the process much easier.
+- or add them as the same machine with double the capacity.
 
 I believe assuming things for scheduling allows for much intuitive API usage hence the design that assumes certain things.
 
